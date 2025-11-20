@@ -5,11 +5,13 @@
     <vendor>anniext</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends config-file="go-support.xml">org.jetbrains.plugins.go</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- 扩展点将在后续实现时添加 -->
+        <!-- 插件启动活动 -->
+        <postStartupActivity implementation="com.github.anniext.pprofview.startup.PluginStartupActivity"/>
     </extensions>
 
     <actions>

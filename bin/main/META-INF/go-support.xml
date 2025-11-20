@@ -1,0 +1,7 @@
+<idea-plugin>
+    <!-- Go 插件支持配置 -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Pprof 运行配置类型 -->
+        <configurationType implementation="com.github.anniext.pprofview.runconfig.PprofConfigurationType"/>
+    </extensions>
+</idea-plugin>
