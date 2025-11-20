@@ -38,7 +38,7 @@ enum class PprofCollectionMode(val displayName: String, val description: String)
 
     companion object {
         fun fromString(value: String?): PprofCollectionMode {
-            return entries.find { it.name == value } ?: NONE
+            return entries.find { it.name == value } ?: RUNTIME_SAMPLING
         }
     }
 }

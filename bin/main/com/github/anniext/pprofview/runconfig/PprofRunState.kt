@@ -32,6 +32,181 @@ class PprofRunState(
         // 清除 pprof Output 窗口的旧数据
         clearPprofOutput()
         
+        val collectionMode = PprofCollectionMode.fromString(configuration.collectionMode)
+        logger.info("采集模式: $collectionMode")
+        
+        // 根据采集模式选择不同的启动方式
+        return when (collectionMode) {
+            PprofCollectionMode.COMPILE_TIME_INSTRUMENTATION -> startWithCompileTimeInstrumentation()
+            PprofCollectionMode.RUNTIME_SAMPLING -> startWithRuntimeSampling()
+            else -> startWithRuntimeSampling() // 其他模式暂时使用运行时采样
+        }
+    }
+    
+    /**
+     * 使用编译时插桩模式启动
+     */
+    private fun startWithCompileTimeInstrumentation(): ProcessHandler {
+        val logger = thisLogger()
+        logger.info("使用编译时插桩模式")
+        
+        val outputDir = getOutputDirectory()
+        cleanOldPprofFiles(outputDir)
+        
+        // 第一步：构建可执行文件
+        val buildDir = File(outputDir, "build")
+        if (!buildDir.exists()) {
+            buildDir.mkdirs()
+        }
+        
+        val executableName = "app_${System.currentTimeMillis()}"
+        val executablePath = File(buildDir, executableName).absolutePath
+        
+        val buildCommandLine = createBuildCommand(executablePath)
+        logger.info("构建命令: ${buildCommandLine.commandLineString}")
+        
+        // 执行构建
+        val buildProcess = ProcessHandlerFactory.getInstance().createColoredProcessHandler(buildCommandLine)
+        var buildSuccess = false
+        var buildOutput = StringBuilder()
+        
+        buildProcess.addProcessListener(object : ProcessListener {
+            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                buildOutput.append(event.text)
+            }
+            
+            override fun processTerminated(event: ProcessEvent) {
+                buildSuccess = event.exitCode == 0
+                logger.info("构建完成，退出码: ${event.exitCode}")
+            }
+        })
+        
+        buildProcess.startNotify()
+        buildProcess.waitFor()
+        
+        if (!buildSuccess) {
+            logger.error("构建失败:\n$buildOutput")
+            throw RuntimeException("编译时插桩构建失败")
+        }
+        
+        // 第二步：运行可执行文件
+        val runCommandLine = createRunCommand(executablePath)
+        logger.info("运行命令: ${runCommandLine.commandLineString}")
+        
+        val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(runCommandLine)
+        ProcessTerminatedListener.attach(processHandler)
+        
+        // 添加进程监听器
+        if (configuration.enablePprof && configuration.autoOpenResult) {
+            addVisualizationListener(processHandler, outputDir, null)
+        }
+        
+        return processHandler
+    }
+    
+    /**
+     * 创建构建命令
+     */
+    private fun createBuildCommand(outputPath: String): GeneralCommandLine {
+        val logger = thisLogger()
+        val commandLine = GeneralCommandLine()
+        commandLine.exePath = "go"
+        commandLine.addParameter("build")
+        
+        // 添加输出路径
+        commandLine.addParameter("-o")
+        commandLine.addParameter(outputPath)
+        
+        // 添加编译时插桩相关的构建标志
+        if (configuration.customBuildFlags.isNotEmpty()) {
+            configuration.customBuildFlags.split(" ").forEach { flag ->
+                if (flag.isNotBlank()) {
+                    commandLine.addParameter(flag)
+                    logger.info("添加自定义构建标志: $flag")
+                }
+            }
+        }
+        
+        // 根据 profile 类型添加相应的构建标志
+        val selectedTypes = configuration.profileTypes.split(",")
+            .map { it.trim() }
+            .mapNotNull { PprofProfileType.fromString(it) }
+        
+        if (PprofProfileType.RACE in selectedTypes) {
+            commandLine.addParameter("-race")
+            logger.info("启用 race detector")
+        }
+        
+        // 添加用户的构建标志
+        if (configuration.goBuildFlags.isNotEmpty()) {
+            configuration.goBuildFlags.split(" ").forEach { flag ->
+                if (flag.isNotBlank()) {
+                    commandLine.addParameter(flag)
+                }
+            }
+        }
+        
+        // 添加源文件/目录/包路径
+        val runKind = PprofRunKind.fromString(configuration.runKind)
+        when (runKind) {
+            PprofRunKind.FILE -> {
+                if (configuration.filePath.isNotEmpty()) {
+                    commandLine.addParameter(configuration.filePath)
+                }
+            }
+            PprofRunKind.DIRECTORY -> {
+                if (configuration.directoryPath.isNotEmpty()) {
+                    commandLine.addParameter(configuration.directoryPath)
+                }
+            }
+            PprofRunKind.PACKAGE -> {
+                if (configuration.packagePath.isNotEmpty()) {
+                    commandLine.addParameter(configuration.packagePath)
+                }
+            }
+        }
+        
+        if (configuration.workingDirectory.isNotEmpty()) {
+            commandLine.setWorkDirectory(configuration.workingDirectory)
+        }
+        
+        return commandLine
+    }
+    
+    /**
+     * 创建运行命令
+     */
+    private fun createRunCommand(executablePath: String): GeneralCommandLine {
+        val commandLine = GeneralCommandLine()
+        commandLine.exePath = executablePath
+        
+        // 添加程序参数
+        if (configuration.programArguments.isNotEmpty()) {
+            commandLine.addParameters(configuration.programArguments.split(" "))
+        }
+        
+        if (configuration.workingDirectory.isNotEmpty()) {
+            commandLine.setWorkDirectory(configuration.workingDirectory)
+        }
+        
+        // 添加环境变量
+        addEnvironmentVariables(commandLine)
+        
+        // 添加 pprof 相关环境变量
+        if (configuration.enablePprof) {
+            addPprofEnvironmentVariables(commandLine)
+        }
+        
+        return commandLine
+    }
+    
+    /**
+     * 使用运行时采样模式启动
+     */
+    private fun startWithRuntimeSampling(): ProcessHandler {
+        val logger = thisLogger()
+        logger.info("使用运行时采样模式")
+        
         val commandLine = GeneralCommandLine()
         commandLine.exePath = "go"
         commandLine.addParameter("run")
@@ -77,9 +252,8 @@ class PprofRunState(
         
         // 如果启用了 pprof 且是运行时采样模式，注入 pprof 初始化文件（放在用户文件之后）
         var pprofInitFile: File? = null
-        logger.info("Pprof 配置: enablePprof=${configuration.enablePprof}, collectionMode=${configuration.collectionMode}")
-        if (configuration.enablePprof && 
-            PprofCollectionMode.fromString(configuration.collectionMode) == PprofCollectionMode.RUNTIME_SAMPLING) {
+        logger.info("Pprof 配置: enablePprof=${configuration.enablePprof}")
+        if (configuration.enablePprof) {
             logger.info("开始注入 pprof 初始化文件...")
             pprofInitFile = injectPprofInit()
             if (pprofInitFile != null) {
@@ -102,82 +276,13 @@ class PprofRunState(
         }
         
         // 添加环境变量
-        if (configuration.environmentVariables.isNotEmpty()) {
-            configuration.environmentVariables.split(";").forEach { envVar ->
-                val parts = envVar.split("=", limit = 2)
-                if (parts.size == 2) {
-                    commandLine.environment[parts[0]] = parts[1]
-                }
-            }
-        }
+        addEnvironmentVariables(commandLine)
         
         // 添加 pprof 相关的环境变量
         if (configuration.enablePprof) {
             val outputDir = getOutputDirectory()
-            
-            // 清除旧的 pprof 文件
             cleanOldPprofFiles(outputDir)
-            
-            commandLine.environment["PPROF_OUTPUT_DIR"] = outputDir.absolutePath
-            logger.info("设置 PPROF_OUTPUT_DIR=${outputDir.absolutePath}")
-            
-            // 设置采样率
-            if (configuration.memProfileRate > 0) {
-                commandLine.environment["PPROF_MEM_RATE"] = configuration.memProfileRate.toString()
-            }
-            
-            if (configuration.blockProfileRate > 0) {
-                commandLine.environment["PPROF_BLOCK_RATE"] = configuration.blockProfileRate.toString()
-            }
-            
-            if (configuration.mutexProfileFraction > 0) {
-                commandLine.environment["PPROF_MUTEX_FRACTION"] = configuration.mutexProfileFraction.toString()
-            }
-            
-            // 设置 CPU 采样持续时间
-            commandLine.environment["PPROF_CPU_DURATION"] = configuration.cpuDuration.toString()
-            
-            // 设置采样模式和间隔
-            commandLine.environment["PPROF_SAMPLING_MODE"] = configuration.samplingMode
-            commandLine.environment["PPROF_SAMPLING_INTERVAL"] = configuration.samplingInterval.toString()
-            logger.info("采样模式: ${configuration.samplingMode}, 间隔: ${configuration.samplingInterval}秒")
-            
-            // 设置启用的分析类型
-            logger.info("Profile types: ${configuration.profileTypes}")
-            configuration.profileTypes.split(",").forEach { typeStr ->
-                val type = PprofProfileType.fromString(typeStr.trim())
-                if (type != null) {
-                    when (type) {
-                        PprofProfileType.CPU -> {
-                            commandLine.environment["PPROF_ENABLE_CPU"] = "true"
-                            logger.info("启用 CPU profiling")
-                        }
-                        PprofProfileType.HEAP -> {
-                            commandLine.environment["PPROF_ENABLE_HEAP"] = "true"
-                            logger.info("启用 HEAP profiling")
-                        }
-                        PprofProfileType.GOROUTINE -> {
-                            commandLine.environment["PPROF_ENABLE_GOROUTINE"] = "true"
-                        }
-                        PprofProfileType.BLOCK -> {
-                            commandLine.environment["PPROF_ENABLE_BLOCK"] = "true"
-                        }
-                        PprofProfileType.MUTEX -> {
-                            commandLine.environment["PPROF_ENABLE_MUTEX"] = "true"
-                        }
-                        PprofProfileType.ALLOCS -> {
-                            commandLine.environment["PPROF_ENABLE_ALLOCS"] = "true"
-                        }
-                        PprofProfileType.THREAD_CREATE -> {
-                            commandLine.environment["PPROF_ENABLE_THREADCREATE"] = "true"
-                        }
-                        PprofProfileType.TRACE -> {
-                            commandLine.environment["PPROF_ENABLE_TRACE"] = "true"
-                            logger.info("启用 TRACE profiling")
-                        }
-                    }
-                }
-            }
+            addPprofEnvironmentVariables(commandLine)
         }
         
         // 打印完整的命令行用于调试

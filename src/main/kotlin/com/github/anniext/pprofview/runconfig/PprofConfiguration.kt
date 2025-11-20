@@ -38,7 +38,6 @@ class PprofConfiguration(
     var cpuDuration: Int = 30
     var httpPort: Int = 6060
     var autoOpenResult: Boolean = true
-    var customBuildFlags: String = ""
     var memProfileRate: Int = 524288
     var mutexProfileFraction: Int = 1
     var blockProfileRate: Int = 1
@@ -75,7 +74,6 @@ class PprofConfiguration(
             cpuDuration = pprofElement.getAttributeValue("cpuDuration")?.toIntOrNull() ?: cpuDuration
             httpPort = pprofElement.getAttributeValue("httpPort")?.toIntOrNull() ?: httpPort
             autoOpenResult = pprofElement.getAttributeValue("autoOpenResult")?.toBoolean() ?: autoOpenResult
-            customBuildFlags = pprofElement.getAttributeValue("customBuildFlags") ?: customBuildFlags
             memProfileRate = pprofElement.getAttributeValue("memProfileRate")?.toIntOrNull() ?: memProfileRate
             mutexProfileFraction = pprofElement.getAttributeValue("mutexProfileFraction")?.toIntOrNull() ?: mutexProfileFraction
             blockProfileRate = pprofElement.getAttributeValue("blockProfileRate")?.toIntOrNull() ?: blockProfileRate
@@ -107,7 +105,6 @@ class PprofConfiguration(
         pprofElement.setAttribute("cpuDuration", cpuDuration.toString())
         pprofElement.setAttribute("httpPort", httpPort.toString())
         pprofElement.setAttribute("autoOpenResult", autoOpenResult.toString())
-        pprofElement.setAttribute("customBuildFlags", customBuildFlags)
         pprofElement.setAttribute("memProfileRate", memProfileRate.toString())
         pprofElement.setAttribute("mutexProfileFraction", mutexProfileFraction.toString())
         pprofElement.setAttribute("blockProfileRate", blockProfileRate.toString())

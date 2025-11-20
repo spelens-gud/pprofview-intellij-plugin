@@ -42,9 +42,6 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     private val mutexProfileFractionField = JBTextField("1")
     private val blockProfileRateField = JBTextField("1")
     
-    // 编译配置
-    private val customBuildFlagsField = JBTextField()
-    
     // Go 程序配置
     private val runKindComboBox = ComboBox(PprofRunKind.entries.toTypedArray())
     private val fileField = TextFieldWithBrowseButton()
@@ -80,33 +77,49 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         packageField.isEditable = true
         
         // 配置文件选择器
-        fileField.addBrowseFolderListener(
-            "选择 Go 文件",
-            "选择要运行的 Go 文件",
-            null,
-            FileChooserDescriptorFactory.createSingleFileDescriptor()
+        val singleFileDescriptor = com.intellij.openapi.fileChooser.FileChooserDescriptor(
+            true, false, false, false, false, false
+        ).withTitle("选择 Go 文件")
+        
+        fileField.addActionListener {
+            val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
+                singleFileDescriptor,
+                null,
+                null
+            )
+            chooser?.let { fileField.text = it.path }
+        }
+        
+        val singleFolderDescriptor = com.intellij.openapi.fileChooser.FileChooserDescriptor(
+            false, true, false, false, false, false
         )
         
-        directoryField.addBrowseFolderListener(
-            "选择目录",
-            "选择包含 main 包的目录",
-            null,
-            FileChooserDescriptorFactory.createSingleFolderDescriptor()
-        )
+        directoryField.addActionListener {
+            val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
+                singleFolderDescriptor.withTitle("选择目录"),
+                null,
+                null
+            )
+            chooser?.let { directoryField.text = it.path }
+        }
         
-        workingDirectoryField.addBrowseFolderListener(
-            "选择工作目录",
-            "选择程序运行的工作目录",
-            null,
-            FileChooserDescriptorFactory.createSingleFolderDescriptor()
-        )
+        workingDirectoryField.addActionListener {
+            val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
+                singleFolderDescriptor.withTitle("选择工作目录"),
+                null,
+                null
+            )
+            chooser?.let { workingDirectoryField.text = it.path }
+        }
         
-        outputDirectoryField.addBrowseFolderListener(
-            "选择输出目录",
-            "选择 pprof 文件输出目录",
-            null,
-            FileChooserDescriptorFactory.createSingleFolderDescriptor()
-        )
+        outputDirectoryField.addActionListener {
+            val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
+                singleFolderDescriptor.withTitle("选择输出目录"),
+                null,
+                null
+            )
+            chooser?.let { outputDirectoryField.text = it.path }
+        }
         
         // 设置 ComboBox 渲染器
         collectionModeComboBox.renderer = object : DefaultListCellRenderer() {
@@ -164,7 +177,6 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
             .addLabeledComponent("内存采样率（字节）:", memProfileRateField)
             .addLabeledComponent("互斥锁采样率:", mutexProfileFractionField)
             .addLabeledComponent("阻塞采样率:", blockProfileRateField)
-            .addLabeledComponent("自定义编译参数:", customBuildFlagsField)
             .panel
         
         advancedPanel.border = BorderFactory.createTitledBorder("高级配置")
@@ -268,8 +280,6 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         memProfileRateField.text = configuration.memProfileRate.toString()
         mutexProfileFractionField.text = configuration.mutexProfileFraction.toString()
         blockProfileRateField.text = configuration.blockProfileRate.toString()
-        
-        customBuildFlagsField.text = configuration.customBuildFlags
     }
 
     override fun applyEditorTo(configuration: PprofConfiguration) {
@@ -286,7 +296,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         // Pprof 配置
         configuration.enablePprof = enablePprofCheckBox.isSelected
         configuration.collectionMode = (collectionModeComboBox.selectedItem as? PprofCollectionMode)?.name
-            ?: PprofCollectionMode.NONE.name
+            ?: PprofCollectionMode.RUNTIME_SAMPLING.name
         configuration.samplingMode = (samplingModeComboBox.selectedItem as? PprofSamplingMode)?.name
             ?: PprofSamplingMode.SINGLE.name
         configuration.samplingInterval = samplingIntervalField.text.toIntOrNull() ?: 60
@@ -311,8 +321,6 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         configuration.memProfileRate = memProfileRateField.text.toIntOrNull() ?: 524288
         configuration.mutexProfileFraction = mutexProfileFractionField.text.toIntOrNull() ?: 1
         configuration.blockProfileRate = blockProfileRateField.text.toIntOrNull() ?: 1
-        
-        configuration.customBuildFlags = customBuildFlagsField.text
     }
     
     /**
