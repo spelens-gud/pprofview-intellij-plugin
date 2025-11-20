@@ -370,8 +370,8 @@ class PprofVisualizationService(private val project: Project) {
                 
                 override fun processTerminated(event: ProcessEvent) {
                     if (event.exitCode == 0) {
-                        // 在工具窗口中显示输出
-                        showOutputInToolWindow(title, output.toString())
+                        // 在工具窗口中显示输出，传入 pprof 文件以支持代码导航
+                        showOutputInToolWindow(title, output.toString(), file)
                     } else {
                         val errorMsg = if (errorOutput.isNotEmpty()) {
                             errorOutput.toString().trim()
@@ -406,14 +406,14 @@ class PprofVisualizationService(private val project: Project) {
     /**
      * 在工具窗口中显示输出
      */
-    private fun showOutputInToolWindow(title: String, content: String) {
+    private fun showOutputInToolWindow(title: String, content: String, pprofFile: VirtualFile? = null) {
         ApplicationManager.getApplication().invokeLater {
             // 打开工具窗口
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("pprof Output")
             toolWindow?.show {
                 // 获取输出面板并添加内容（带可视化）
                 val outputPanel = PprofOutputPanel.getInstance(project)
-                outputPanel?.addOutputWithVisualization(title, content)
+                outputPanel?.addOutputWithVisualization(title, content, pprofFile)
             }
             
             // 同时显示通知

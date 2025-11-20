@@ -15,6 +15,7 @@
         
         <!-- 项目级服务 -->
         <projectService serviceImplementation="com.github.anniext.pprofview.services.PprofVisualizationService"/>
+        <projectService serviceImplementation="com.github.anniext.pprofview.services.PprofCodeNavigationService"/>
         
         <!-- 通知组 -->
         <notificationGroup id="pprofview.notifications" displayType="BALLOON"/>

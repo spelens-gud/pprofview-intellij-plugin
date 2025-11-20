@@ -31,7 +31,7 @@ class VisualizationIntegrationTest : BasePlatformTestCase() {
         assertEquals(36.84, firstEntry.flatPercent, 0.01)
         
         // 创建图表面板（验证不会抛出异常）
-        val chartPanel = PprofChartPanel(report)
+        val chartPanel = PprofChartPanel(report, project, null)
         assertNotNull(chartPanel)
     }
     
@@ -56,7 +56,7 @@ class VisualizationIntegrationTest : BasePlatformTestCase() {
         assertTrue(firstEntry.flat > 0)
         
         // 创建图表面板（验证不会抛出异常）
-        val chartPanel = PprofChartPanel(report)
+        val chartPanel = PprofChartPanel(report, project, null)
         assertNotNull(chartPanel)
     }
     

@@ -37,6 +37,8 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val outputs = mutableMapOf<String, JTextArea>()
     // 记录每个标签页的报告类型，用于覆盖逻辑
     private val tabReportTypes = mutableMapOf<String, Int>() // reportType -> tabIndex
+    // 记录当前正在处理的 pprof 文件
+    private var currentPprofFile: com.intellij.openapi.vfs.VirtualFile? = null
     
     init {
         add(tabbedPane, BorderLayout.CENTER)
@@ -65,8 +67,13 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     /**
      * 添加输出标签页（带可视化）
      */
-    fun addOutputWithVisualization(title: String, content: String) {
+    fun addOutputWithVisualization(title: String, content: String, pprofFile: com.intellij.openapi.vfs.VirtualFile? = null) {
         try {
+            // 记录当前的 pprof 文件
+            if (pprofFile != null) {
+                currentPprofFile = pprofFile
+            }
+            
             // 检查是否已存在同类型的标签页，如果存在则覆盖
             removeExistingTab(title)
             
@@ -75,8 +82,8 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             val report = parser.parse(content)
             
             if (report.entries.isNotEmpty()) {
-                // 直接显示图表，不显示原始数据
-                val chartPanel = PprofChartPanel(report)
+                // 直接显示图表，传入 project 和 pprofFile 以支持代码导航
+                val chartPanel = PprofChartPanel(report, project, currentPprofFile)
                 
                 val tabIndex = tabbedPane.tabCount
                 tabbedPane.addTab(title, chartPanel)

@@ -1,17 +1,26 @@
 package com.github.anniext.pprofview.ui
 
 import com.github.anniext.pprofview.parser.PprofTextReport
+import com.github.anniext.pprofview.services.PprofCodeNavigationService
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import java.awt.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 
 /**
  * pprof 图表面板
  * 用于可视化展示 pprof 数据
  */
-class PprofChartPanel(private val report: PprofTextReport) : JBPanel<PprofChartPanel>(BorderLayout()) {
+class PprofChartPanel(
+    private val report: PprofTextReport,
+    private val project: Project? = null,
+    private val pprofFile: VirtualFile? = null
+) : JBPanel<PprofChartPanel>(BorderLayout()) {
     
     init {
         // 创建选项卡面板
@@ -520,14 +529,61 @@ class PprofChartPanel(private val report: PprofTextReport) : JBPanel<PprofChartP
                 // 数值列右对齐
                 horizontalAlignment = if (column in 2..6) SwingConstants.RIGHT else SwingConstants.LEFT
                 
+                // 函数名列显示为可点击的链接样式
+                if (column == 1 && project != null && pprofFile != null) {
+                    cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                    if (!isSelected) {
+                        c.foreground = JBColor(Color(0, 102, 204), Color(100, 150, 255))
+                    }
+                }
+                
                 return c
             }
         })
+        
+        // 添加鼠标点击监听器
+        if (project != null && pprofFile != null) {
+            table.addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    val row = table.rowAtPoint(e.point)
+                    val column = table.columnAtPoint(e.point)
+                    
+                    // 只处理函数名列的点击
+                    if (row >= 0 && column == 1) {
+                        val functionName = table.getValueAt(row, column) as String
+                        navigateToCode(functionName)
+                    }
+                }
+                
+                override fun mouseEntered(e: MouseEvent) {
+                    val column = table.columnAtPoint(e.point)
+                    if (column == 1) {
+                        table.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                    }
+                }
+                
+                override fun mouseExited(e: MouseEvent) {
+                    table.cursor = Cursor.getDefaultCursor()
+                }
+            })
+        }
         
         val scrollPane = JBScrollPane(table)
         scrollPane.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
         
         return scrollPane
+    }
+    
+    /**
+     * 导航到代码位置
+     */
+    private fun navigateToCode(functionName: String) {
+        if (project == null || pprofFile == null) {
+            return
+        }
+        
+        val navigationService = PprofCodeNavigationService.getInstance(project)
+        navigationService.navigateToFunction(pprofFile, functionName)
     }
     
     /**
