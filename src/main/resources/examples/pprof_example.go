@@ -55,8 +55,6 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 		
-		log.Println("CPU profiling 已启动，输出到:", cpuFile)
-		
 		// 根据配置的持续时间自动停止
 		if durationStr := os.Getenv("PPROF_CPU_DURATION"); durationStr != "" {
 			if duration, err := time.ParseDuration(durationStr + "s"); err == nil {

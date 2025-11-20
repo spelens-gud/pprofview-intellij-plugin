@@ -24,9 +24,7 @@ var (
 	pprofOutputDir   string
 )
 
-func init() {
-	log.Println("[pprofview] pprof 初始化开始...")
-	
+func init() {	
 	outputDir := os.Getenv("PPROF_OUTPUT_DIR")
 	if outputDir == "" {
 		log.Println("[pprofview] 未设置 PPROF_OUTPUT_DIR 环境变量，跳过 pprof 采集")
@@ -34,8 +32,6 @@ func init() {
 	}
 	
 	pprofOutputDir = outputDir
-	log.Printf("[pprofview] pprof 输出目录: %s", outputDir)
-	
 	// 确保输出目录存在
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		log.Printf("[pprofview] 无法创建输出目录: %v", err)
@@ -72,11 +68,9 @@ func init() {
 			log.Printf("[pprofview] 无法创建 CPU profile 文件: %v", err)
 		} else {
 			if err := pprof.StartCPUProfile(f); err != nil {
-				log.Printf("[pprofview] 无法启动 CPU profiling: %v", err)
 				f.Close()
 			} else {
 				pprofCpuFile = f
-				log.Printf("[pprofview] CPU profiling 已启动: %s", cpuFilePath)
 			}
 		}
 	}
@@ -89,11 +83,9 @@ func init() {
 			log.Printf("[pprofview] 无法创建 trace 文件: %v", err)
 		} else {
 			if err := trace.Start(f); err != nil {
-				log.Printf("[pprofview] 无法启动 trace: %v", err)
 				f.Close()
 			} else {
 				pprofTraceFile = f
-				log.Printf("[pprofview] Trace 已启动: %s", traceFilePath)
 			}
 		}
 	}
@@ -152,7 +144,6 @@ func init() {
 		log.Printf("[pprofview] 循环采样间隔: %d 秒", samplingInterval)
 		startLoopSampling(cpuDuration, samplingInterval)
 	} else {
-		log.Println("[pprofview] 单次采样模式")
 		startSingleSampling(cpuDuration)
 	}
 }

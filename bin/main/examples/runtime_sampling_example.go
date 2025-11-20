@@ -81,12 +81,9 @@ func startCPUProfiling(outputDir string) {
 	}
 	
 	if err := pprof.StartCPUProfile(f); err != nil {
-		log.Printf("[pprof] 无法启动 CPU profiling: %v", err)
 		f.Close()
 		return
 	}
-	
-	log.Printf("[pprof] CPU profiling 已启动: %s", cpuFile)
 	
 	// 获取持续时间
 	duration := 30

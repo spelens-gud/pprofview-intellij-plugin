@@ -98,7 +98,6 @@ func startCPUProfiling(outputDir string) *os.File {
 		return nil
 	}
 	
-	log.Printf("[pprofview] CPU profiling 已启动: %s", cpuFile)
 	return f
 }
 
