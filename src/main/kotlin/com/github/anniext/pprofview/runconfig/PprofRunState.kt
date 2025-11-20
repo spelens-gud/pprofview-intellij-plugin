@@ -9,6 +9,7 @@ import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.process.ProcessTerminatedListener
+import com.intellij.openapi.util.Key
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -42,20 +43,30 @@ class PprofRunState(
         
         // 根据运行种类添加参数
         val runKind = PprofRunKind.fromString(configuration.runKind)
+        logger.info("运行种类: $runKind")
         when (runKind) {
             PprofRunKind.FILE -> {
                 if (configuration.filePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.filePath)
+                    logger.info("文件路径: ${configuration.filePath}")
+                } else {
+                    logger.warn("文件路径为空")
                 }
             }
             PprofRunKind.DIRECTORY -> {
                 if (configuration.directoryPath.isNotEmpty()) {
                     commandLine.addParameter(configuration.directoryPath)
+                    logger.info("目录路径: ${configuration.directoryPath}")
+                } else {
+                    logger.warn("目录路径为空")
                 }
             }
             PprofRunKind.PACKAGE -> {
                 if (configuration.packagePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.packagePath)
+                    logger.info("包路径: ${configuration.packagePath}")
+                } else {
+                    logger.warn("包路径为空")
                 }
             }
         }
@@ -99,6 +110,10 @@ class PprofRunState(
         // 添加 pprof 相关的环境变量
         if (configuration.enablePprof) {
             val outputDir = getOutputDirectory()
+            
+            // 清除旧的 pprof 文件
+            cleanOldPprofFiles(outputDir)
+            
             commandLine.environment["PPROF_OUTPUT_DIR"] = outputDir.absolutePath
             logger.info("设置 PPROF_OUTPUT_DIR=${outputDir.absolutePath}")
             
@@ -144,8 +159,12 @@ class PprofRunState(
                         PprofProfileType.ALLOCS -> {
                             commandLine.environment["PPROF_ENABLE_ALLOCS"] = "true"
                         }
-                        else -> {
-                            // 其他类型暂不支持
+                        PprofProfileType.THREAD_CREATE -> {
+                            commandLine.environment["PPROF_ENABLE_THREADCREATE"] = "true"
+                        }
+                        PprofProfileType.TRACE -> {
+                            commandLine.environment["PPROF_ENABLE_TRACE"] = "true"
+                            logger.info("启用 TRACE profiling")
                         }
                     }
                 }
@@ -160,64 +179,43 @@ class PprofRunState(
         val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         
-        // 如果启用了自动打开结果，启动后台任务监控 pprof 文件生成
+        // 如果启用了自动打开结果，监控输出和进程终止
         logger.info("autoOpenResult=${configuration.autoOpenResult}")
         if (configuration.enablePprof && configuration.autoOpenResult) {
             val outputDir = getOutputDirectory()
-            logger.info("启动后台监控任务，输出目录: ${outputDir.absolutePath}")
+            logger.info("将在数据保存完成或进程结束后进行可视化，输出目录: ${outputDir.absolutePath}")
             
-            // 使用定时器定期检查文件
-            val timer = java.util.Timer()
-            val checkTask = object : java.util.TimerTask() {
-                private var lastFileCount = 0
-                private var stableCount = 0
-                
-                override fun run() {
-                    val pprofFiles = outputDir.listFiles { file ->
-                        file.isFile && file.name.endsWith(".pprof")
-                    }
-                    
-                    val currentCount = pprofFiles?.size ?: 0
-                    
-                    // 如果文件数量稳定（连续 3 次检查都相同且大于 0），说明采样完成
-                    if (currentCount > 0 && currentCount == lastFileCount) {
-                        stableCount++
-                        if (stableCount >= 3) {
-                            logger.info("检测到 pprof 文件生成完成，共 $currentCount 个文件")
-                            cancel()
-                            timer.cancel()
-                            
-                            // 清理临时文件
-                            pprofInitFile?.delete()
-                            
-                            // 打开可视化
-                            autoOpenVisualization(outputDir)
-                        }
-                    } else {
-                        stableCount = 0
-                    }
-                    
-                    lastFileCount = currentCount
-                }
-            }
+            var visualizationTriggered = false
             
-            // 每 2 秒检查一次，最多检查 5 分钟
-            timer.schedule(checkTask, 2000, 2000)
-            
-            // 5 分钟后自动取消
-            java.util.Timer().schedule(object : java.util.TimerTask() {
-                override fun run() {
-                    timer.cancel()
-                    pprofInitFile?.delete()
-                }
-            }, 300000)
-            
-            // 同时注册进程终止监听器作为备用
             processHandler.addProcessListener(object : ProcessListener {
+                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                    val text = event.text
+                    
+                    // 检测到 pprof 数据保存完成的日志
+                    if (!visualizationTriggered && text.contains("[pprofview] 所有 pprof 数据已保存")) {
+                        visualizationTriggered = true
+                        logger.info("检测到 pprof 数据保存完成，立即进行可视化")
+                        
+                        // 在后台线程中执行可视化，避免阻塞输出处理
+                        Thread {
+                            Thread.sleep(500) // 短暂延迟确保文件完全写入
+                            autoOpenVisualization(outputDir)
+                        }.start()
+                    }
+                }
+                
                 override fun processTerminated(event: ProcessEvent) {
                     logger.info("进程已终止，退出码: ${event.exitCode}")
-                    timer.cancel()
+                    
+                    // 清理临时文件
                     pprofInitFile?.delete()
+                    
+                    // 如果还没有触发可视化，在进程结束时触发（备用方案）
+                    if (!visualizationTriggered) {
+                        logger.info("进程结束时触发可视化（备用方案）")
+                        Thread.sleep(1000)
+                        autoOpenVisualization(outputDir)
+                    }
                 }
             })
         } else if (pprofInitFile != null) {
@@ -296,6 +294,31 @@ class PprofRunState(
     }
     
     /**
+     * 清除输出目录中的旧 pprof 和 trace 文件
+     */
+    private fun cleanOldPprofFiles(outputDir: File) {
+        val logger = thisLogger()
+        try {
+            val profileFiles = outputDir.listFiles { file ->
+                file.isFile && (file.name.endsWith(".pprof") || file.name.endsWith(".out"))
+            }
+            
+            if (!profileFiles.isNullOrEmpty()) {
+                logger.info("清除 ${profileFiles.size} 个旧的性能分析文件")
+                profileFiles.forEach { file ->
+                    if (file.delete()) {
+                        logger.info("已删除: ${file.name}")
+                    } else {
+                        logger.warn("无法删除: ${file.name}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("清除旧性能分析文件失败", e)
+        }
+    }
+    
+    /**
      * 自动打开可视化
      */
     private fun autoOpenVisualization(outputDir: File) {
@@ -303,31 +326,55 @@ class PprofRunState(
         ApplicationManager.getApplication().invokeLater {
             val project = environment.project
             
-            // 查找生成的 pprof 文件
-            val pprofFiles = outputDir.listFiles { file ->
-                file.isFile && file.name.endsWith(".pprof")
+            // 查找生成的 pprof 和 trace 文件
+            val profileFiles = outputDir.listFiles { file ->
+                file.isFile && (file.name.endsWith(".pprof") || file.name.endsWith(".out"))
             }
             
-            if (pprofFiles.isNullOrEmpty()) {
-                logger.warn("未找到生成的 pprof 文件: ${outputDir.absolutePath}")
+            if (profileFiles.isNullOrEmpty()) {
+                logger.warn("未找到生成的性能分析文件: ${outputDir.absolutePath}")
                 return@invokeLater
             }
             
-            logger.info("找到 ${pprofFiles.size} 个 pprof 文件")
+            logger.info("找到 ${profileFiles.size} 个性能分析文件")
+            
+            // 获取用户选中的分析类型
+            val selectedTypes = configuration.profileTypes.split(",")
+                .map { it.trim() }
+                .mapNotNull { PprofProfileType.fromString(it) }
+                .toSet()
+            
+            logger.info("用户选中的分析类型: ${selectedTypes.map { it.name }}")
             
             // 刷新文件系统
             LocalFileSystem.getInstance().refreshAndFindFileByIoFile(outputDir)
             
-            // 为每个 pprof 文件生成文本报告并显示在 pprof Output 窗口
-            pprofFiles.sortedBy { it.name }.forEach { file ->
-                val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-                if (virtualFile != null) {
-                    logger.info("生成 ${file.name} 的文本报告")
-                    // 使用 TEXT 类型在 pprof Output 窗口显示
-                    val visualizationService = project.service<PprofVisualizationService>()
-                    visualizationService.visualize(virtualFile, VisualizationType.TEXT)
+            // 只为用户选中的分析类型生成报告
+            profileFiles.sortedBy { it.name }.forEach { file ->
+                // 根据文件名判断分析类型
+                val profileType = matchProfileType(file.name)
+                
+                if (profileType != null && profileType in selectedTypes) {
+                    val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+                    if (virtualFile != null) {
+                        logger.info("生成 ${file.name} 的文本报告（类型: ${profileType.displayName}）")
+                        // 使用 TEXT 类型在 pprof Output 窗口显示
+                        val visualizationService = project.service<PprofVisualizationService>()
+                        visualizationService.visualize(virtualFile, VisualizationType.TEXT)
+                    }
+                } else {
+                    logger.info("跳过 ${file.name}（类型: ${profileType?.displayName ?: "未知"}，未被选中）")
                 }
             }
+        }
+    }
+    
+    /**
+     * 根据文件名匹配分析类型
+     */
+    private fun matchProfileType(fileName: String): PprofProfileType? {
+        return PprofProfileType.entries.find { type ->
+            fileName.contains(type.fileName.substringBefore("."), ignoreCase = true)
         }
     }
 }

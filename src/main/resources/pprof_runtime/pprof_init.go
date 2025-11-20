@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
 	"strconv"
 	"syscall"
 	"time"
@@ -18,6 +19,7 @@ import (
 var (
 	pprofCleanupFunc func()
 	pprofCpuFile     *os.File
+	pprofTraceFile   *os.File
 	pprofOutputDir   string
 )
 
@@ -78,14 +80,38 @@ func init() {
 		}
 	}
 	
+	// 执行追踪
+	if os.Getenv("PPROF_ENABLE_TRACE") == "true" {
+		traceFilePath := filepath.Join(outputDir, "trace.out")
+		f, err := os.Create(traceFilePath)
+		if err != nil {
+			log.Printf("[pprofview] 无法创建 trace 文件: %v", err)
+		} else {
+			if err := trace.Start(f); err != nil {
+				log.Printf("[pprofview] 无法启动 trace: %v", err)
+				f.Close()
+			} else {
+				pprofTraceFile = f
+				log.Printf("[pprofview] Trace 已启动: %s", traceFilePath)
+			}
+		}
+	}
+	
 	// 设置清理函数
 	pprofCleanupFunc = func() {
+		log.Println("[pprofview] 开始保存 pprof 数据...")
 		if pprofCpuFile != nil {
 			pprof.StopCPUProfile()
 			pprofCpuFile.Close()
 			log.Printf("[pprofview] CPU profiling 已完成")
 		}
+		if pprofTraceFile != nil {
+			trace.Stop()
+			pprofTraceFile.Close()
+			log.Printf("[pprofview] Trace 已完成")
+		}
 		writePprofProfiles(pprofOutputDir)
+		log.Println("[pprofview] 所有 pprof 数据已保存")
 	}
 	
 	// 捕获中断信号
@@ -111,54 +137,13 @@ func init() {
 	
 	log.Printf("[pprofview] CPU 采样持续时间: %d 秒", cpuDuration)
 	
-	// 启动一个 goroutine 在指定时间后自动保存
-	// 同时监控程序是否提前退出
+	// 在指定时间后保存数据
 	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
-		
-		elapsed := 0
-		for range ticker.C {
-			elapsed++
-			if elapsed >= cpuDuration {
-				log.Println("[pprofview] CPU 采样时间到，保存 pprof 数据...")
-				if pprofCleanupFunc != nil {
-					pprofCleanupFunc()
-					pprofCleanupFunc = nil
-				}
-				return
-			}
-		}
-	}()
-	
-	// 注册程序退出时的钩子
-	// 监控主 goroutine 数量变化，检测程序是否即将退出
-	go func() {
-		time.Sleep(100 * time.Millisecond) // 等待程序启动
-		checkCount := 0
-		lastCount := runtime.NumGoroutine()
-		
-		ticker := time.NewTicker(200 * time.Millisecond)
-		defer ticker.Stop()
-		
-		for range ticker.C {
-			current := runtime.NumGoroutine()
-			
-			// 如果 goroutine 数量持续很低或持续减少，说明程序即将退出
-			if current <= 2 || (current < lastCount && current <= 3) {
-				checkCount++
-				if checkCount >= 2 { // 连续 2 次检查确认
-					log.Println("[pprofview] 检测到程序即将退出，立即保存 pprof 数据...")
-					if pprofCleanupFunc != nil {
-						pprofCleanupFunc()
-						pprofCleanupFunc = nil
-					}
-					return
-				}
-			} else {
-				checkCount = 0
-			}
-			lastCount = current
+		time.Sleep(time.Duration(cpuDuration) * time.Second)
+		log.Println("[pprofview] 采样时间到，保存 pprof 数据...")
+		if pprofCleanupFunc != nil {
+			pprofCleanupFunc()
+			pprofCleanupFunc = nil
 		}
 	}()
 }
@@ -224,6 +209,18 @@ func writePprofProfiles(outputDir string) {
 			runtime.GC()
 			if err := pprof.Lookup("allocs").WriteTo(f, 0); err == nil {
 				log.Printf("[pprofview] 内存分配 profiling 已完成: %s", allocsFile)
+			}
+			f.Close()
+		}
+	}
+	
+	// 线程创建分析
+	if os.Getenv("PPROF_ENABLE_THREADCREATE") == "true" {
+		threadCreateFile := filepath.Join(outputDir, "threadcreate.pprof")
+		f, err := os.Create(threadCreateFile)
+		if err == nil {
+			if err := pprof.Lookup("threadcreate").WriteTo(f, 0); err == nil {
+				log.Printf("[pprofview] 线程创建 profiling 已完成: %s", threadCreateFile)
 			}
 			f.Close()
 		}

@@ -33,7 +33,13 @@ class PprofVisualizationService(private val project: Project) {
      * 可视化 pprof 文件
      */
     fun visualize(file: VirtualFile, type: VisualizationType) {
-        logger.info("开始可视化 pprof 文件: ${file.path}, 类型: ${type.name}")
+        logger.info("开始可视化文件: ${file.path}, 类型: ${type.name}")
+        
+        // 检查是否是 trace 文件
+        if (file.name.endsWith(".out") || file.name.contains("trace")) {
+            visualizeTrace(file)
+            return
+        }
         
         when (type) {
             VisualizationType.WEB -> visualizeInBrowser(file)
@@ -44,6 +50,137 @@ class PprofVisualizationService(private val project: Project) {
             VisualizationType.LIST -> showList(file)
             VisualizationType.PEEK -> showPeek(file)
         }
+    }
+    
+    /**
+     * 可视化 trace 文件
+     */
+    private fun visualizeTrace(file: VirtualFile) {
+        logger.info("显示 trace 信息: ${file.path}")
+        
+        // 获取文件信息
+        val fileSize = File(file.path).length()
+        val fileSizeStr = when {
+            fileSize > 1024 * 1024 -> String.format("%.2f MB", fileSize / (1024.0 * 1024.0))
+            fileSize > 1024 -> String.format("%.2f KB", fileSize / 1024.0)
+            else -> "$fileSize bytes"
+        }
+        
+        // 构建输出内容
+        val output = buildTraceOutput(file, fileSizeStr)
+        
+        // 在工具窗口中显示
+        showOutputInToolWindow("Trace - 执行追踪", output)
+        
+        // 同时启动 web 服务器
+        startTraceWebServer(file)
+    }
+    
+    /**
+     * 启动 trace web 服务器
+     */
+    private fun startTraceWebServer(file: VirtualFile) {
+        logger.info("启动 trace web 服务器: ${file.path}")
+        
+        val commandLine = GeneralCommandLine()
+        commandLine.exePath = "go"
+        commandLine.addParameters("tool", "trace", "-http=:0", file.path)
+        
+        try {
+            val processHandler = ProcessHandlerFactory.getInstance()
+                .createColoredProcessHandler(commandLine)
+            
+            processHandler.addProcessListener(object : ProcessListener {
+                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                    val text = event.text
+                    if (outputType == ProcessOutputTypes.STDOUT || outputType == ProcessOutputTypes.STDERR) {
+                        // 匹配 "Serving web UI on http://localhost:xxxxx"
+                        val pattern = Pattern.compile("http://[^\\s]+")
+                        val matcher = pattern.matcher(text)
+                        if (matcher.find()) {
+                            val url = matcher.group()
+                            logger.info("检测到 trace web 服务地址: $url")
+                            openInBrowser(url)
+                            
+                            showNotification(
+                                "Trace 可视化已启动",
+                                "浏览器将自动打开 $url\n关闭浏览器后，进程会自动停止",
+                                NotificationType.INFORMATION
+                            )
+                        }
+                    }
+                }
+                
+                override fun processTerminated(event: ProcessEvent) {
+                    logger.info("trace web 服务已停止")
+                }
+            })
+            
+            processHandler.startNotify()
+        } catch (e: Exception) {
+            logger.error("启动 trace web 服务失败", e)
+            showNotification(
+                "启动失败",
+                "无法启动 trace web 服务: ${e.message}\n请确保已安装 Go 工具链",
+                NotificationType.ERROR
+            )
+        }
+    }
+    
+    /**
+     * 构建 trace 输出内容
+     */
+    private fun buildTraceOutput(file: VirtualFile, fileSize: String): String {
+        val sb = StringBuilder()
+        sb.appendLine("=" .repeat(80))
+        sb.appendLine("执行追踪分析报告")
+        sb.appendLine("=" .repeat(80))
+        sb.appendLine()
+        sb.appendLine("文件: ${file.name}")
+        sb.appendLine("路径: ${file.path}")
+        sb.appendLine("大小: $fileSize")
+        sb.appendLine()
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine("关于执行追踪")
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine()
+        sb.appendLine("执行追踪（Execution Trace）记录了程序运行期间的详细事件信息，包括：")
+        sb.appendLine()
+        sb.appendLine("  • Goroutine 的创建、阻塞、唤醒和销毁")
+        sb.appendLine("  • 系统调用的进入和退出")
+        sb.appendLine("  • GC 事件")
+        sb.appendLine("  • 处理器的启动和停止")
+        sb.appendLine("  • 网络阻塞事件")
+        sb.appendLine()
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine("查看可视化")
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine()
+        sb.appendLine("✓ 交互式 Web 界面已自动启动")
+        sb.appendLine()
+        sb.appendLine("如果浏览器没有自动打开，请手动在终端运行：")
+        sb.appendLine("  go tool trace ${file.path}")
+        sb.appendLine()
+        sb.appendLine("Web 界面提供以下视图：")
+        sb.appendLine()
+        sb.appendLine("  • View trace - 时间线视图，显示所有事件")
+        sb.appendLine("  • Goroutine analysis - 分析 goroutine 的执行情况")
+        sb.appendLine("  • Network blocking profile - 网络阻塞分析")
+        sb.appendLine("  • Synchronization blocking profile - 同步阻塞分析")
+        sb.appendLine("  • Syscall blocking profile - 系统调用阻塞分析")
+        sb.appendLine("  • Scheduler latency profile - 调度延迟分析")
+        sb.appendLine()
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine("使用提示")
+        sb.appendLine("-" .repeat(80))
+        sb.appendLine()
+        sb.appendLine("1. 在时间线视图中，可以使用 WASD 键或鼠标拖动来导航")
+        sb.appendLine("2. 点击事件可以查看详细信息")
+        sb.appendLine("3. 使用搜索功能快速定位特定的 goroutine 或事件")
+        sb.appendLine("4. 关注长时间阻塞的 goroutine，这些可能是性能瓶颈")
+        sb.appendLine()
+        
+        return sb.toString()
     }
     
     /**
@@ -211,15 +348,24 @@ class PprofVisualizationService(private val project: Project) {
         commandLine.addParameters(args)
         commandLine.addParameter(file.path)
         
+        logger.info("执行 pprof 命令: ${commandLine.commandLineString}")
+        
         try {
             val processHandler = ProcessHandlerFactory.getInstance()
                 .createColoredProcessHandler(commandLine)
             
             val output = StringBuilder()
+            val errorOutput = StringBuilder()
             
             processHandler.addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                    output.append(event.text)
+                    val text = event.text
+                    output.append(text)
+                    
+                    // 分别记录标准错误输出
+                    if (outputType == ProcessOutputTypes.STDERR) {
+                        errorOutput.append(text)
+                    }
                 }
                 
                 override fun processTerminated(event: ProcessEvent) {
@@ -227,9 +373,19 @@ class PprofVisualizationService(private val project: Project) {
                         // 在工具窗口中显示输出
                         showOutputInToolWindow(title, output.toString())
                     } else {
+                        val errorMsg = if (errorOutput.isNotEmpty()) {
+                            errorOutput.toString().trim()
+                        } else {
+                            output.toString().trim()
+                        }
+                        
+                        logger.error("pprof 命令执行失败，退出码: ${event.exitCode}, 错误信息: $errorMsg")
+                        
                         showNotification(
                             "执行失败",
-                            "命令执行失败，退出码: ${event.exitCode}",
+                            "命令执行失败，退出码: ${event.exitCode}\n" +
+                            "命令: ${commandLine.commandLineString}\n" +
+                            if (errorMsg.isNotEmpty()) "错误: ${errorMsg.take(200)}" else "",
                             NotificationType.ERROR
                         )
                     }
