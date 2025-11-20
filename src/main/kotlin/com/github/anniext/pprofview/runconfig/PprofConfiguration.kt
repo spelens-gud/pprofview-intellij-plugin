@@ -41,6 +41,7 @@ class PprofConfiguration(
     var memProfileRate: Int = 524288
     var mutexProfileFraction: Int = 1
     var blockProfileRate: Int = 1
+    var testPattern: String = ""  // 测试模式选项，支持正则表达式
     
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
         return PprofConfigurationEditor()
@@ -77,6 +78,7 @@ class PprofConfiguration(
             memProfileRate = pprofElement.getAttributeValue("memProfileRate")?.toIntOrNull() ?: memProfileRate
             mutexProfileFraction = pprofElement.getAttributeValue("mutexProfileFraction")?.toIntOrNull() ?: mutexProfileFraction
             blockProfileRate = pprofElement.getAttributeValue("blockProfileRate")?.toIntOrNull() ?: blockProfileRate
+            testPattern = pprofElement.getAttributeValue("testPattern") ?: testPattern
         }
     }
     
@@ -108,6 +110,7 @@ class PprofConfiguration(
         pprofElement.setAttribute("memProfileRate", memProfileRate.toString())
         pprofElement.setAttribute("mutexProfileFraction", mutexProfileFraction.toString())
         pprofElement.setAttribute("blockProfileRate", blockProfileRate.toString())
+        pprofElement.setAttribute("testPattern", testPattern)
         
         element.addContent(pprofElement)
     }

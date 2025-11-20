@@ -200,6 +200,12 @@ class PprofRunState(
             }
         }
         
+        // 添加测试模式选项（支持正则表达式）
+        if (configuration.testPattern.isNotEmpty()) {
+            commandLine.addParameter("-run=${configuration.testPattern}")
+            logger.info("测试模式选项: ${configuration.testPattern}")
+        }
+        
         // 添加 CPU profile 参数
         if (configuration.profileTypes.contains(PprofProfileType.CPU.name)) {
             val cpuProfilePath = File(outputDir, "cpu.pprof").absolutePath

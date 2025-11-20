@@ -20,6 +20,9 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     private val collectionModeComboBox = ComboBox(PprofCollectionMode.entries.toTypedArray())
     private val samplingModeComboBox = ComboBox(PprofSamplingMode.entries.toTypedArray())
     private val samplingIntervalField = JBTextField("60")
+    private val testPatternField = JBTextField().apply {
+        toolTipText = "测试函数正则表达式，例如：^\\QTestIndexHandler\\E$ 表示运行 TestIndexHandler 测试函数"
+    }
     
     // 性能分析类型
     private val cpuCheckBox = JBCheckBox("CPU 分析", true)
@@ -209,6 +212,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
             .addLabeledComponent("采集模式:", collectionModeComboBox)
             .addLabeledComponent("采样模式:", samplingModeComboBox)
             .addLabeledComponent("采样间隔（秒）:", samplingIntervalField)
+            .addLabeledComponent("测试模式选项:", testPatternField)
             .addComponent(profileTypesPanel)
             .addLabeledComponent("输出目录:", outputDirectoryField)
             .addComponent(autoOpenResultCheckBox)
@@ -221,6 +225,11 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         // 添加运行种类变化监听器
         runKindComboBox.addActionListener {
             onRunKindChanged()
+        }
+        
+        // 添加采集模式变化监听器
+        collectionModeComboBox.addActionListener {
+            onCollectionModeChanged()
         }
         
         // 添加工作目录变化监听器
@@ -260,6 +269,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         val samplingMode = PprofSamplingMode.fromString(configuration.samplingMode)
         samplingModeComboBox.selectedItem = samplingMode
         samplingIntervalField.text = configuration.samplingInterval.toString()
+        testPatternField.text = configuration.testPattern
         
         // 重置性能分析类型
         val selectedTypes = configuration.profileTypes.split(",").toSet()
@@ -280,6 +290,10 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         memProfileRateField.text = configuration.memProfileRate.toString()
         mutexProfileFractionField.text = configuration.mutexProfileFraction.toString()
         blockProfileRateField.text = configuration.blockProfileRate.toString()
+        
+        // 更新字段可用性
+        onCollectionModeChanged()
+        updateRunKindFields()
     }
 
     override fun applyEditorTo(configuration: PprofConfiguration) {
@@ -300,6 +314,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         configuration.samplingMode = (samplingModeComboBox.selectedItem as? PprofSamplingMode)?.name
             ?: PprofSamplingMode.SINGLE.name
         configuration.samplingInterval = samplingIntervalField.text.toIntOrNull() ?: 60
+        configuration.testPattern = testPatternField.text
         
         // 收集选中的性能分析类型
         val selectedTypes = mutableListOf<String>()
@@ -351,6 +366,56 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         val workingDir = workingDirectoryField.text
         if (workingDir.isNotEmpty()) {
             updateSmartDefaults(workingDir)
+        }
+    }
+    
+    /**
+     * 采集模式变化时的响应
+     */
+    private fun onCollectionModeChanged() {
+        val collectionMode = collectionModeComboBox.selectedItem as? PprofCollectionMode
+        val isTestMode = collectionMode == PprofCollectionMode.TEST_SAMPLING
+        val isHttpMode = collectionMode == PprofCollectionMode.HTTP_SERVER
+        
+        // 测试模式选项只在测试时采样模式下可用
+        testPatternField.isEnabled = isTestMode
+        
+        // 采样模式和采样间隔在测试模式下不可用（测试模式使用 go test 的参数）
+        samplingModeComboBox.isEnabled = !isTestMode && !isHttpMode
+        samplingIntervalField.isEnabled = !isTestMode && !isHttpMode
+        
+        // HTTP 端口只在 HTTP 服务模式下可用
+        httpPortField.isEnabled = isHttpMode
+        
+        // 性能分析类型的可用性
+        if (isTestMode) {
+            // 测试模式：go test 只支持以下参数
+            cpuCheckBox.isEnabled = true          // -cpuprofile
+            heapCheckBox.isEnabled = true         // -memprofile
+            blockCheckBox.isEnabled = true        // -blockprofile
+            mutexCheckBox.isEnabled = true        // -mutexprofile
+            
+            // go test 不支持的类型
+            goroutineCheckBox.isEnabled = false
+            threadCreateCheckBox.isEnabled = false
+            allocsCheckBox.isEnabled = false
+            traceCheckBox.isEnabled = false
+            
+            // 取消勾选不支持的类型
+            goroutineCheckBox.isSelected = false
+            threadCreateCheckBox.isSelected = false
+            allocsCheckBox.isSelected = false
+            traceCheckBox.isSelected = false
+        } else {
+            // 运行时采样和 HTTP 服务模式：所有类型都可用
+            cpuCheckBox.isEnabled = true
+            heapCheckBox.isEnabled = true
+            goroutineCheckBox.isEnabled = true
+            threadCreateCheckBox.isEnabled = true
+            blockCheckBox.isEnabled = true
+            mutexCheckBox.isEnabled = true
+            allocsCheckBox.isEnabled = true
+            traceCheckBox.isEnabled = true
         }
     }
     
