@@ -18,6 +18,8 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     // 基本配置
     private val enablePprofCheckBox = JBCheckBox("启用 pprof 性能分析", true)
     private val collectionModeComboBox = ComboBox(PprofCollectionMode.entries.toTypedArray())
+    private val samplingModeComboBox = ComboBox(PprofSamplingMode.entries.toTypedArray())
+    private val samplingIntervalField = JBTextField("60")
     
     // 性能分析类型
     private val cpuCheckBox = JBCheckBox("CPU 分析", true)
@@ -122,6 +124,22 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
                 return component
             }
         }
+        
+        samplingModeComboBox.renderer = object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): java.awt.Component {
+                val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                if (value is PprofSamplingMode) {
+                    text = value.displayName
+                }
+                return component
+            }
+        }
     }
 
     override fun createEditor(): JComponent {
@@ -177,6 +195,8 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
             .addSeparator()
             .addComponent(enablePprofCheckBox)
             .addLabeledComponent("采集模式:", collectionModeComboBox)
+            .addLabeledComponent("采样模式:", samplingModeComboBox)
+            .addLabeledComponent("采样间隔（秒）:", samplingIntervalField)
             .addComponent(profileTypesPanel)
             .addLabeledComponent("输出目录:", outputDirectoryField)
             .addComponent(autoOpenResultCheckBox)
@@ -225,6 +245,10 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         val mode = PprofCollectionMode.fromString(configuration.collectionMode)
         collectionModeComboBox.selectedItem = mode
         
+        val samplingMode = PprofSamplingMode.fromString(configuration.samplingMode)
+        samplingModeComboBox.selectedItem = samplingMode
+        samplingIntervalField.text = configuration.samplingInterval.toString()
+        
         // 重置性能分析类型
         val selectedTypes = configuration.profileTypes.split(",").toSet()
         cpuCheckBox.isSelected = PprofProfileType.CPU.name in selectedTypes
@@ -263,6 +287,9 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         configuration.enablePprof = enablePprofCheckBox.isSelected
         configuration.collectionMode = (collectionModeComboBox.selectedItem as? PprofCollectionMode)?.name
             ?: PprofCollectionMode.NONE.name
+        configuration.samplingMode = (samplingModeComboBox.selectedItem as? PprofSamplingMode)?.name
+            ?: PprofSamplingMode.SINGLE.name
+        configuration.samplingInterval = samplingIntervalField.text.toIntOrNull() ?: 60
         
         // 收集选中的性能分析类型
         val selectedTypes = mutableListOf<String>()

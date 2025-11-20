@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -127,7 +128,7 @@ func init() {
 		os.Exit(0)
 	}()
 	
-	// 获取 CPU 采样持续时间
+	// 获取采样配置
 	cpuDuration := 30
 	if durationStr := os.Getenv("PPROF_CPU_DURATION"); durationStr != "" {
 		if d, err := strconv.Atoi(durationStr); err == nil && d > 0 {
@@ -135,9 +136,29 @@ func init() {
 		}
 	}
 	
-	log.Printf("[pprofview] CPU 采样持续时间: %d 秒", cpuDuration)
+	samplingMode := os.Getenv("PPROF_SAMPLING_MODE")
+	samplingInterval := 60
+	if intervalStr := os.Getenv("PPROF_SAMPLING_INTERVAL"); intervalStr != "" {
+		if i, err := strconv.Atoi(intervalStr); err == nil && i > 0 {
+			samplingInterval = i
+		}
+	}
 	
-	// 在指定时间后保存数据
+	log.Printf("[pprofview] CPU 采样持续时间: %d 秒", cpuDuration)
+	log.Printf("[pprofview] 采样模式: %s", samplingMode)
+	
+	// 根据采样模式启动不同的采样逻辑
+	if samplingMode == "LOOP" {
+		log.Printf("[pprofview] 循环采样间隔: %d 秒", samplingInterval)
+		startLoopSampling(cpuDuration, samplingInterval)
+	} else {
+		log.Println("[pprofview] 单次采样模式")
+		startSingleSampling(cpuDuration)
+	}
+}
+
+// startSingleSampling 单次采样模式
+func startSingleSampling(cpuDuration int) {
 	go func() {
 		time.Sleep(time.Duration(cpuDuration) * time.Second)
 		log.Println("[pprofview] 采样时间到，保存 pprof 数据...")
@@ -146,6 +167,72 @@ func init() {
 			pprofCleanupFunc = nil
 		}
 	}()
+}
+
+// startLoopSampling 循环采样模式
+func startLoopSampling(cpuDuration int, interval int) {
+	go func() {
+		sampleCount := 0
+		for {
+			sampleCount++
+			log.Printf("[pprofview] 开始第 %d 次采样...", sampleCount)
+			
+			// 等待采样时间
+			time.Sleep(time.Duration(cpuDuration) * time.Second)
+			
+			log.Printf("[pprofview] 第 %d 次采样完成，保存数据...", sampleCount)
+			
+			// 保存当前采样数据
+			if pprofCleanupFunc != nil {
+				pprofCleanupFunc()
+			}
+			
+			log.Printf("[pprofview] 等待 %d 秒后开始下一次采样...", interval)
+			
+			// 等待采样间隔
+			time.Sleep(time.Duration(interval) * time.Second)
+			
+			// 重新启动 CPU profiling 和 trace（如果启用）
+			restartProfiling()
+		}
+	}()
+}
+
+// restartProfiling 重新启动 profiling
+func restartProfiling() {
+	// 重新启动 CPU profiling
+	if os.Getenv("PPROF_ENABLE_CPU") == "true" && pprofOutputDir != "" {
+		cpuFilePath := filepath.Join(pprofOutputDir, fmt.Sprintf("cpu_%d.pprof", time.Now().Unix()))
+		f, err := os.Create(cpuFilePath)
+		if err != nil {
+			log.Printf("[pprofview] 无法创建 CPU profile 文件: %v", err)
+		} else {
+			if err := pprof.StartCPUProfile(f); err != nil {
+				log.Printf("[pprofview] 无法启动 CPU profiling: %v", err)
+				f.Close()
+			} else {
+				pprofCpuFile = f
+				log.Printf("[pprofview] CPU profiling 已重新启动: %s", cpuFilePath)
+			}
+		}
+	}
+	
+	// 重新启动 trace
+	if os.Getenv("PPROF_ENABLE_TRACE") == "true" && pprofOutputDir != "" {
+		traceFilePath := filepath.Join(pprofOutputDir, fmt.Sprintf("trace_%d.out", time.Now().Unix()))
+		f, err := os.Create(traceFilePath)
+		if err != nil {
+			log.Printf("[pprofview] 无法创建 trace 文件: %v", err)
+		} else {
+			if err := trace.Start(f); err != nil {
+				log.Printf("[pprofview] 无法启动 trace: %v", err)
+				f.Close()
+			} else {
+				pprofTraceFile = f
+				log.Printf("[pprofview] Trace 已重新启动: %s", traceFilePath)
+			}
+		}
+	}
 }
 
 

@@ -28,6 +28,10 @@ class PprofRunState(
     
     override fun startProcess(): ProcessHandler {
         val logger = thisLogger()
+        
+        // 清除 pprof Output 窗口的旧数据
+        clearPprofOutput()
+        
         val commandLine = GeneralCommandLine()
         commandLine.exePath = "go"
         commandLine.addParameter("run")
@@ -132,6 +136,11 @@ class PprofRunState(
             
             // 设置 CPU 采样持续时间
             commandLine.environment["PPROF_CPU_DURATION"] = configuration.cpuDuration.toString()
+            
+            // 设置采样模式和间隔
+            commandLine.environment["PPROF_SAMPLING_MODE"] = configuration.samplingMode
+            commandLine.environment["PPROF_SAMPLING_INTERVAL"] = configuration.samplingInterval.toString()
+            logger.info("采样模式: ${configuration.samplingMode}, 间隔: ${configuration.samplingInterval}秒")
             
             // 设置启用的分析类型
             logger.info("Profile types: ${configuration.profileTypes}")
@@ -375,6 +384,27 @@ class PprofRunState(
     private fun matchProfileType(fileName: String): PprofProfileType? {
         return PprofProfileType.entries.find { type ->
             fileName.contains(type.fileName.substringBefore("."), ignoreCase = true)
+        }
+    }
+    
+    /**
+     * 清除 pprof Output 窗口的数据
+     */
+    private fun clearPprofOutput() {
+        val logger = thisLogger()
+        ApplicationManager.getApplication().invokeLater {
+            try {
+                val project = environment.project
+                val outputPanel = com.github.anniext.pprofview.toolWindow.PprofOutputPanel.getInstance(project)
+                if (outputPanel != null) {
+                    outputPanel.clearAll()
+                    logger.info("已清除 pprof Output 窗口的旧数据")
+                } else {
+                    logger.warn("无法获取 pprof Output 窗口实例")
+                }
+            } catch (e: Exception) {
+                logger.error("清除 pprof Output 窗口失败", e)
+            }
         }
     }
 }

@@ -32,6 +32,8 @@ class PprofConfiguration(
     var enablePprof: Boolean = true
     var collectionMode: String = PprofCollectionMode.RUNTIME_SAMPLING.name
     var profileTypes: String = PprofProfileType.CPU.name
+    var samplingMode: String = PprofSamplingMode.SINGLE.name
+    var samplingInterval: Int = 60
     var outputDirectory: String = ""
     var cpuDuration: Int = 30
     var httpPort: Int = 6060
@@ -67,6 +69,8 @@ class PprofConfiguration(
             enablePprof = pprofElement.getAttributeValue("enablePprof")?.toBoolean() ?: enablePprof
             collectionMode = pprofElement.getAttributeValue("collectionMode") ?: collectionMode
             profileTypes = pprofElement.getAttributeValue("profileTypes") ?: profileTypes
+            samplingMode = pprofElement.getAttributeValue("samplingMode") ?: samplingMode
+            samplingInterval = pprofElement.getAttributeValue("samplingInterval")?.toIntOrNull() ?: samplingInterval
             outputDirectory = pprofElement.getAttributeValue("outputDirectory") ?: outputDirectory
             cpuDuration = pprofElement.getAttributeValue("cpuDuration")?.toIntOrNull() ?: cpuDuration
             httpPort = pprofElement.getAttributeValue("httpPort")?.toIntOrNull() ?: httpPort
@@ -97,6 +101,8 @@ class PprofConfiguration(
         pprofElement.setAttribute("enablePprof", enablePprof.toString())
         pprofElement.setAttribute("collectionMode", collectionMode)
         pprofElement.setAttribute("profileTypes", profileTypes)
+        pprofElement.setAttribute("samplingMode", samplingMode)
+        pprofElement.setAttribute("samplingInterval", samplingInterval.toString())
         pprofElement.setAttribute("outputDirectory", outputDirectory)
         pprofElement.setAttribute("cpuDuration", cpuDuration.toString())
         pprofElement.setAttribute("httpPort", httpPort.toString())
