@@ -36,14 +36,6 @@ enum class PprofCollectionMode(val displayName: String, val description: String)
         "启动 HTTP 服务器提供实时性能数据访问"
     ),
 
-    /**
-     * 无 - 不启用 pprof
-     */
-    NONE(
-        "禁用",
-        "不启用 pprof 性能分析"
-    );
-
     companion object {
         fun fromString(value: String?): PprofCollectionMode {
             return entries.find { it.name == value } ?: NONE

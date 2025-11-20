@@ -93,6 +93,7 @@ func startCPUProfiling(outputDir string) *os.File {
 	}
 	
 	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Printf("[pprofview] 无法启动 CPU profiling: %v", err)
 		f.Close()
 		return nil
 	}
