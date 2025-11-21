@@ -1,6 +1,8 @@
 # Pprof Plus: Visual Analytics
 
 <!-- Plugin description -->
+A powerful performance analysis plugin that brings go tool pprof directly into your IDE. Visualize, analyze, and optimize your Go applications without leaving GoLand or IntelliJ IDEA.
+
 <h2>🚀 Pprof Plus - Go Performance Analysis Made Easy</h2>
 
 <p>
