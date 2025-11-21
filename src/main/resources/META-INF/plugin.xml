@@ -106,6 +106,20 @@
         </p>
     ]]></description>
 
+    <!-- 插件截图轮播 -->
+    <screenshots>
+        <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_config.png" 
+                    description="Smart Run Configuration - Configure profiling with multiple collection modes"/>
+        <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_embed.png" 
+                    description="Inlay Hints - Performance metrics displayed directly in code editor"/>
+        <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_heatmap.png" 
+                    description="Heatmap Visualization - Treemap of Top 20 functions with color-coded hotspots"/>
+        <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_hover.png" 
+                    description="Interactive Hover - Detailed performance information on hover"/>
+        <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_detailed.png" 
+                    description="Detailed Analysis - Comprehensive performance data visualization"/>
+    </screenshots>
+
     <!-- Specify IDE compatibility -->
     <idea-version since-build="252"/>
 

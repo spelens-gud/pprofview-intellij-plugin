@@ -51,6 +51,33 @@ Visualize, analyze, and optimize your Go applications without leaving GoLand or 
 
 English | [简体中文](README_ZH.md)
 
+## 📸 Screenshots
+
+### Smart Run Configuration
+Configure profiling with multiple collection modes, profile types, and flexible parameters.
+
+![Run Configuration](screenshot/pprof_config.png)
+
+### Inlay Hints - Performance Metrics in Code
+Display flat and cum performance data directly at the end of code lines with color-coded hotspot indicators.
+
+![Inlay Hints](screenshot/pprof_embed.png)
+
+### Heatmap Visualization
+Interactive treemap showing Top 20 functions' performance distribution with color intensity representing hotspot levels.
+
+![Heatmap](screenshot/pprof_heatmap.png)
+
+### Interactive Hover Details
+Hover over functions to see detailed performance information including flat%, cum%, and call relationships.
+
+![Hover Details](screenshot/pprof_hover.png)
+
+### Comprehensive Analysis View
+Detailed performance data visualization with multiple analysis perspectives.
+
+![Detailed Analysis](screenshot/pprof_detailed.png)
+
 ## ✨ Key Features
 
 ### 🎯 Run Configuration
