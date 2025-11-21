@@ -28,6 +28,9 @@ import java.io.InputStreamReader
 class PprofCodeNavigationService(private val project: Project) {
     private val logger = thisLogger()
     
+    // 存储当前高亮的编辑器，用于清除高亮
+    private var currentHighlightedEditor: com.intellij.openapi.editor.Editor? = null
+    
     /**
      * 导航到函数定义
      * 
@@ -381,7 +384,8 @@ class PprofCodeNavigationService(private val project: Project) {
             
             // 清除之前的高亮
             val clearStartTime = System.currentTimeMillis()
-            markupModel.removeAllHighlighters()
+            clearHighlights()
+            currentHighlightedEditor = editor
             val clearDuration = System.currentTimeMillis() - clearStartTime
             logger.info("  - 清除旧高亮耗时: ${clearDuration}ms")
             
@@ -397,22 +401,29 @@ class PprofCodeNavigationService(private val project: Project) {
                 val endOffset = editor.document.getLineEndOffset(lineNumber)
                 
                 // 根据性能数据强度选择颜色
-                val color = getHotLineColor(hotLine)
+                val (backgroundColor, borderColor) = getHotLineColors(hotLine)
                 
+                // 创建文本属性（带背景色和圆角边框）
                 val textAttributes = TextAttributes().apply {
-                    backgroundColor = color
-                    effectType = EffectType.BOXED
-                    effectColor = color.darker()
+                    this.backgroundColor = backgroundColor
+                    effectColor = borderColor
+                    // 使用圆角边框效果，更加美观
+                    effectType = EffectType.ROUNDED_BOX
                     fontType = Font.BOLD
                 }
                 
-                markupModel.addRangeHighlighter(
+                // 添加高亮
+                val highlighter = markupModel.addRangeHighlighter(
                     startOffset,
                     endOffset,
                     HighlighterLayer.SELECTION - 1,
                     textAttributes,
                     HighlighterTargetArea.LINES_IN_RANGE
                 )
+                
+                // 设置工具提示
+                val tooltip = buildTooltip(hotLine)
+                highlighter.errorStripeTooltip = tooltip
                 
                 highlightedCount++
             }
@@ -560,14 +571,127 @@ class PprofCodeNavigationService(private val project: Project) {
     }
     
     /**
-     * 根据热点数据获取颜色
+     * 根据热点数据获取颜色和样式
+     * 返回 Pair<背景色, 边框色>
      */
-    private fun getHotLineColor(hotLine: HotLine): Color {
-        // 简单的颜色映射：有数据的行使用黄色高亮
-        return JBColor(
-            Color(255, 255, 200), // 浅黄色 (亮色主题)
-            Color(80, 80, 40)     // 深黄色 (暗色主题)
-        )
+    private fun getHotLineColors(hotLine: HotLine): Pair<Color, Color> {
+        // 解析性能数据强度
+        val flatValue = parsePerformanceValue(hotLine.flat)
+        val cumValue = parsePerformanceValue(hotLine.cum)
+        val maxValue = maxOf(flatValue, cumValue)
+        
+        // 根据性能数据强度选择颜色
+        return when {
+            maxValue >= 100 -> {
+                // 高热点：红色（Material Design Red）
+                JBColor(
+                    Color(255, 235, 238, 80),  // 浅色主题：浅红色背景
+                    Color(100, 45, 50, 70)     // 深色主题：深红色背景
+                ) to JBColor(
+                    Color(239, 83, 80),        // 浅色主题：红色边框
+                    Color(229, 115, 115)       // 深色主题：亮红色边框
+                )
+            }
+            maxValue >= 10 -> {
+                // 中热点：橙色（Material Design Orange）
+                JBColor(
+                    Color(255, 243, 224, 80),  // 浅色主题：浅橙色背景
+                    Color(100, 75, 45, 70)     // 深色主题：深橙色背景
+                ) to JBColor(
+                    Color(255, 152, 0),        // 浅色主题：橙色边框
+                    Color(255, 183, 77)        // 深色主题：亮橙色边框
+                )
+            }
+            maxValue > 0 -> {
+                // 低热点：黄色（Material Design Amber）
+                JBColor(
+                    Color(255, 248, 225, 80),  // 浅色主题：浅黄色背景
+                    Color(100, 90, 45, 70)     // 深色主题：深黄色背景
+                ) to JBColor(
+                    Color(255, 193, 7),        // 浅色主题：琥珀色边框
+                    Color(255, 213, 79)        // 深色主题：亮琥珀色边框
+                )
+            }
+            else -> {
+                // 默认：绿色（Material Design Green）
+                JBColor(
+                    Color(232, 245, 233, 80),  // 浅色主题：浅绿色背景
+                    Color(45, 80, 50, 70)      // 深色主题：深绿色背景
+                ) to JBColor(
+                    Color(76, 175, 80),        // 浅色主题：绿色边框
+                    Color(102, 187, 106)       // 深色主题：亮绿色边框
+                )
+            }
+        }
+    }
+    
+    /**
+     * 解析性能数据值（支持单位：ms, s, MB, KB 等）
+     */
+    private fun parsePerformanceValue(value: String): Double {
+        if (value == ".") return 0.0
+        
+        try {
+            // 移除单位，只保留数字
+            val numStr = value.replace(Regex("[a-zA-Z%]"), "").trim()
+            return numStr.toDoubleOrNull() ?: 0.0
+        } catch (e: Exception) {
+            return 0.0
+        }
+    }
+    
+    /**
+     * 构建工具提示文本
+     */
+    private fun buildTooltip(hotLine: HotLine): String {
+        val flatValue = parsePerformanceValue(hotLine.flat)
+        val cumValue = parsePerformanceValue(hotLine.cum)
+        val maxValue = maxOf(flatValue, cumValue)
+        
+        val statusIcon = when {
+            maxValue >= 100 -> "🔥"
+            maxValue >= 10 -> "⚠️"
+            maxValue > 0 -> "📊"
+            else -> "✅"
+        }
+        
+        val statusText = when {
+            maxValue >= 100 -> "高热点"
+            maxValue >= 10 -> "中热点"
+            maxValue > 0 -> "低热点"
+            else -> "正常"
+        }
+        
+        return buildString {
+            append("$statusIcon 性能热点信息\n")
+            append("━━━━━━━━━━━━━━━━━━━━\n")
+            append("📍 行号: ${hotLine.lineNumber}\n")
+            append("📊 Flat: ${hotLine.flat}\n")
+            append("📈 Cumulative: ${hotLine.cum}\n")
+            append("━━━━━━━━━━━━━━━━━━━━\n")
+            append("$statusIcon 状态: $statusText\n")
+            if (hotLine.code.isNotBlank()) {
+                append("━━━━━━━━━━━━━━━━━━━━\n")
+                append("💻 代码: ${hotLine.code.trim()}")
+            }
+        }
+    }
+    
+    /**
+     * 清除当前编辑器的高亮
+     */
+    fun clearHighlights() {
+        currentHighlightedEditor?.let { editor ->
+            ApplicationManager.getApplication().invokeLater {
+                try {
+                    editor.markupModel.removeAllHighlighters()
+                    logger.info("已清除编辑器高亮")
+                } catch (e: Exception) {
+                    logger.warn("清除高亮失败: ${e.message}")
+                }
+            }
+        }
+        currentHighlightedEditor = null
     }
     
     /**
