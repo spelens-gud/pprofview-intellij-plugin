@@ -11,6 +11,33 @@
 
 [English](README.md) | 简体中文
 
+## 📸 功能截图
+
+### 智能运行配置
+支持多种采集模式、性能分析类型和灵活的参数配置。
+
+![运行配置](screenshot/pprof_config.png)
+
+### 性能数据内嵌显示
+在代码行尾直接显示 flat 和 cum 性能数据，使用颜色标识热点强度。
+
+![内嵌提示](screenshot/pprof_embed.png)
+
+### 热力图可视化
+交互式矩形树图展示 Top 20 函数的性能分布，颜色深浅代表热点程度。
+
+![热力图](screenshot/pprof_heatmap.png)
+
+### 交互式悬停详情
+悬停在函数上查看详细的性能信息，包括 flat%、cum% 和调用关系。
+
+![悬停详情](screenshot/pprof_hover.png)
+
+### 全面的分析视图
+详细的性能数据可视化，提供多角度的分析视角。
+
+![详细分析](screenshot/pprof_detailed.png)
+
 ## ✨ 核心功能
 
 ### 🎯 运行配置

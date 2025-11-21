@@ -106,7 +106,7 @@
         </p>
     ]]></description>
 
-    <!-- 插件截图轮播 -->
+    <!-- Plugin screenshot carousel -->
     <screenshots>
         <screenshot src="https://raw.githubusercontent.com/spelens-gud/pprofview-intellij-plugin/main/screenshot/pprof_config.png" 
                     description="Smart Run Configuration - Configure profiling with multiple collection modes"/>
