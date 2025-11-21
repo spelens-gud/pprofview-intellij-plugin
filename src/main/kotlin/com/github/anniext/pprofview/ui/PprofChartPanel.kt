@@ -579,11 +579,50 @@ class PprofChartPanel(
      */
     private fun navigateToCode(functionName: String) {
         if (project == null || pprofFile == null) {
+            println("ERROR: project 或 pprofFile 为 null")
+            println("  - project: $project")
+            println("  - pprofFile: $pprofFile")
+            
+            // 显示错误通知
+            com.intellij.notification.NotificationGroupManager.getInstance()
+                .getNotificationGroup("pprofview.notifications")
+                .createNotification(
+                    "代码导航失败",
+                    "项目或 pprof 文件信息缺失",
+                    com.intellij.notification.NotificationType.ERROR
+                )
+                .notify(project)
             return
         }
         
-        val navigationService = PprofCodeNavigationService.getInstance(project)
-        navigationService.navigateToFunction(pprofFile, functionName)
+        val startTime = System.currentTimeMillis()
+        println("========================================")
+        println("用户点击函数: $functionName")
+        println("时间: ${java.time.LocalDateTime.now()}")
+        println("项目: ${project.name}")
+        println("pprof 文件: ${pprofFile.path}")
+        
+        try {
+            val navigationService = PprofCodeNavigationService.getInstance(project)
+            navigationService.navigateToFunction(pprofFile, functionName)
+            
+            val duration = System.currentTimeMillis() - startTime
+            println("点击响应总耗时: ${duration}ms")
+        } catch (e: Exception) {
+            println("ERROR: 导航失败")
+            e.printStackTrace()
+            
+            // 显示错误通知
+            com.intellij.notification.NotificationGroupManager.getInstance()
+                .getNotificationGroup("pprofview.notifications")
+                .createNotification(
+                    "代码导航失败",
+                    "错误: ${e.message}",
+                    com.intellij.notification.NotificationType.ERROR
+                )
+                .notify(project)
+        }
+        println("========================================")
     }
     
     /**
