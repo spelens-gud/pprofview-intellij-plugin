@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.ui
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.github.spelens.pprofview.parser.PprofTextReport
 import com.github.spelens.pprofview.services.PprofCodeNavigationService
 import com.intellij.openapi.project.Project
@@ -13,8 +14,8 @@ import java.awt.event.MouseEvent
 import javax.swing.*
 
 /**
- * pprof 图表面板
- * 用于可视化展示 pprof 数据
+ * pprof chart panel
+ * Used for visualizing pprof data
  */
 class PprofChartPanel(
     private val report: PprofTextReport,
@@ -23,26 +24,26 @@ class PprofChartPanel(
 ) : JBPanel<PprofChartPanel>(BorderLayout()) {
     
     init {
-        // 创建选项卡面板
+        // Create tabbed pane
         val tabbedPane = JTabbedPane()
         
-        // 添加表格视图（第一个标签）
-        tabbedPane.addTab("详细数据", createTablePanel())
+        // Add table view (first tab)
+        tabbedPane.addTab(PprofViewBundle.message("pprof.chart.detailedData"), createTablePanel())
         
-        // 添加柱状图
-        tabbedPane.addTab("柱状图", createBarChartPanel())
+        // Add bar chart
+        tabbedPane.addTab(PprofViewBundle.message("pprof.chart.barChart"), createBarChartPanel())
         
-        // 添加饼图
-        tabbedPane.addTab("饼图", createPieChartPanel())
+        // Add pie chart
+        tabbedPane.addTab(PprofViewBundle.message("pprof.chart.pieChart"), createPieChartPanel())
         
-        // 添加热力图
-        tabbedPane.addTab("热力图", createHeatmapPanel())
+        // Add heatmap
+        tabbedPane.addTab(PprofViewBundle.message("pprof.chart.heatmap"), createHeatmapPanel())
         
         add(tabbedPane, BorderLayout.CENTER)
     }
     
     /**
-     * 创建柱状图面板
+     * Create bar chart panel
      */
     private fun createBarChartPanel(): JComponent {
         val panel = object : JPanel() {
@@ -54,7 +55,7 @@ class PprofChartPanel(
             }
             
             init {
-                // 添加鼠标移动监听器，实现悬停效果
+                // Add mouse motion listener for hover effect
                 addMouseMotionListener(object : MouseAdapter() {
                     override fun mouseMoved(e: MouseEvent) {
                         val newHoveredIndex = getBarIndexAt(e.x, e.y)
@@ -62,7 +63,7 @@ class PprofChartPanel(
                             hoveredBarIndex = newHoveredIndex
                             repaint()
                             
-                            // 更新工具提示
+                            // Update tooltip
                             toolTipText = if (hoveredBarIndex >= 0) {
                                 buildBarTooltip(hoveredBarIndex)
                             } else {
@@ -72,7 +73,7 @@ class PprofChartPanel(
                     }
                 })
                 
-                // 添加鼠标点击监听器，支持导航
+                // Add mouse click listener for navigation
                 addMouseListener(object : MouseAdapter() {
                     override fun mouseClicked(e: MouseEvent) {
                         val barIndex = getBarIndexAt(e.x, e.y)
@@ -93,13 +94,13 @@ class PprofChartPanel(
             }
             
             /**
-             * 获取鼠标位置对应的柱子索引
+             * Get bar index at mouse position
              */
             private fun getBarIndexAt(mouseX: Int, mouseY: Int): Int {
                 val width = this.width
                 val height = this.height
                 
-                // 使用与 drawBarChart 相同的计算逻辑
+                // Use same calculation logic as drawBarChart
                 val leftMargin = when {
                     width < 400 -> 35
                     width < 600 -> 45
@@ -149,22 +150,22 @@ class PprofChartPanel(
             }
             
             /**
-             * 构建柱状图工具提示
+             * Build bar chart tooltip
              */
             private fun buildBarTooltip(index: Int): String {
                 val entry = report.entries[index]
                 return buildString {
                     append("<html>")
-                    append("<b>函数性能详情</b><br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionPerformanceDetails")}</b><br>")
                     append("<hr>")
-                    append("<b>排名：</b> #${index + 1}<br>")
-                    append("<b>函数名：</b> ${entry.functionName}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.rank")}：</b> #${index + 1}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionName")}：</b> ${entry.functionName}<br>")
                     append("<hr>")
-                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
-                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
-                    append("<b>Sum%：</b> ${String.format("%.2f%%", entry.sumPercent)}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.flat")}：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.cum")}：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.sumPercent")}：</b> ${String.format("%.2f%%", entry.sumPercent)}<br>")
                     append("<hr>")
-                    append("<i>点击可跳转到代码位置</i>")
+                    append("<i>${PprofViewBundle.message("pprof.chart.tooltip.clickToNavigate")}</i>")
                     append("</html>")
                 }
             }
@@ -176,7 +177,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 绘制柱状图
+     * Draw bar chart
      */
     private fun drawBarChart(g: Graphics2D, hoveredBarIndex: Int = -1) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -185,7 +186,7 @@ class PprofChartPanel(
         val width = g.clipBounds.width
         val height = g.clipBounds.height
         
-        // 根据窗口宽度动态调整边距和条目数量
+        // Dynamically adjust margins and entry count based on window width
         val leftMargin = when {
             width < 400 -> 35
             width < 600 -> 45
@@ -213,31 +214,31 @@ class PprofChartPanel(
         val chartWidth = width - leftMargin - rightMargin
         val chartHeight = height - topMargin - bottomMargin
         
-        // 取前 N 个条目
+        // Take top N entries
         val topEntries = report.entries.take(topCount)
         if (topEntries.isEmpty()) return
         
-        // 简单背景
+        // Simple background
         g.color = JBColor.background()
         g.fillRect(0, 0, width, height)
         
-        // 绘制标题（窄窗口时缩小字体）
+        // Draw title (smaller font for narrow windows)
         g.color = JBColor.foreground()
         g.font = Font("SansSerif", Font.BOLD, if (width < 500) 13 else 16)
-        val title = "Top $topCount 函数性能"
+        val title = PprofViewBundle.message("pprof.chart.topFunctionsPerformance", topCount)
         val titleWidth = g.fontMetrics.stringWidth(title)
         g.drawString(title, (width - titleWidth) / 2, 20)
         
-        // 副标题（窄窗口时不显示）
+        // Subtitle (hidden for narrow windows)
         if (width >= 400) {
             g.font = Font("SansSerif", Font.PLAIN, 10)
             g.color = JBColor.GRAY
-            val subtitle = "单位: ${report.unit}"
+            val subtitle = PprofViewBundle.message("pprof.chart.unit", report.unit)
             val subtitleWidth = g.fontMetrics.stringWidth(subtitle)
             g.drawString(subtitle, (width - subtitleWidth) / 2, 38)
         }
         
-        // 绘制网格线
+        // Draw grid lines
         g.color = JBColor(Color(230, 230, 230), Color(60, 60, 60))
         g.stroke = BasicStroke(1f)
         val maxValue = topEntries.maxOfOrNull { it.flat } ?: 1L
@@ -247,17 +248,17 @@ class PprofChartPanel(
             g.drawLine(leftMargin, y, width - rightMargin, y)
         }
         
-        // 绘制坐标轴
+        // Draw axes
         g.color = JBColor(Color(120, 120, 120), Color(160, 160, 160))
         g.stroke = BasicStroke(2f)
-        g.drawLine(leftMargin, topMargin, leftMargin, height - bottomMargin) // Y 轴
-        g.drawLine(leftMargin, height - bottomMargin, width - rightMargin, height - bottomMargin) // X 轴
+        g.drawLine(leftMargin, topMargin, leftMargin, height - bottomMargin) // Y axis
+        g.drawLine(leftMargin, height - bottomMargin, width - rightMargin, height - bottomMargin) // X axis
         
-        // 计算柱状图参数
+        // Calculate bar chart parameters
         val barWidth = chartWidth / topEntries.size
         val barActualWidth = maxOf(8, (barWidth * 0.7).toInt())
         
-        // 绘制柱状图
+        // Draw bar chart
         topEntries.forEachIndexed { index, entry ->
             val barHeight = maxOf(2, (entry.flat.toDouble() / maxValue * chartHeight).toInt())
             val x = leftMargin + index * barWidth + (barWidth - barActualWidth) / 2
@@ -266,16 +267,16 @@ class PprofChartPanel(
             val isHovered = index == hoveredBarIndex
             val color = getBarColor(index)
             
-            // 绘制柱子
+            // Draw bar
             g.color = if (isHovered) color.brighter() else color
             g.fillRect(x, y, barActualWidth, barHeight)
             
-            // 绘制边框
+            // Draw border
             g.color = color.darker()
             g.stroke = BasicStroke(if (isHovered) 2f else 1f)
             g.drawRect(x, y, barActualWidth, barHeight)
             
-            // 绘制数值（只在柱子足够高且宽时显示）
+            // Draw value (only when bar is tall and wide enough)
             if (barHeight > 25 && barActualWidth > 20 && width >= 500) {
                 g.font = Font("SansSerif", Font.BOLD, 9)
                 val valueText = String.format("%.1f%%", entry.flatPercent)
@@ -285,7 +286,7 @@ class PprofChartPanel(
                 g.drawString(valueText, x + (barActualWidth - valueWidth) / 2, y - 4)
             }
             
-            // 绘制函数名（只在宽度足够时显示）
+            // Draw function name (only when width is sufficient)
             if (barActualWidth > 15 && width >= 400) {
                 g.font = Font("SansSerif", Font.PLAIN, if (width < 500) 7 else 9)
                 g.color = JBColor.foreground()
@@ -301,7 +302,7 @@ class PprofChartPanel(
             }
         }
         
-        // 绘制 Y 轴刻度
+        // Draw Y axis scale
         g.color = JBColor.foreground()
         g.font = Font("SansSerif", Font.PLAIN, if (width < 500) 8 else 10)
         g.stroke = BasicStroke(1f)
@@ -316,7 +317,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 创建饼图面板
+     * Create pie chart panel
      */
     private fun createPieChartPanel(): JComponent {
         val panel = object : JPanel() {
@@ -328,7 +329,7 @@ class PprofChartPanel(
             }
             
             init {
-                // 添加鼠标移动监听器
+                // Add mouse motion listener
                 addMouseMotionListener(object : MouseAdapter() {
                     override fun mouseMoved(e: MouseEvent) {
                         val newHoveredIndex = getSliceIndexAt(e.x, e.y)
@@ -336,7 +337,7 @@ class PprofChartPanel(
                             hoveredSliceIndex = newHoveredIndex
                             repaint()
                             
-                            // 更新工具提示
+                            // Update tooltip
                             toolTipText = if (hoveredSliceIndex >= 0) {
                                 buildPieTooltip(hoveredSliceIndex)
                             } else {
@@ -346,7 +347,7 @@ class PprofChartPanel(
                     }
                 })
                 
-                // 添加鼠标点击监听器
+                // Add mouse click listener
                 addMouseListener(object : MouseAdapter() {
                     override fun mouseClicked(e: MouseEvent) {
                         val sliceIndex = getSliceIndexAt(e.x, e.y)
@@ -367,7 +368,7 @@ class PprofChartPanel(
             }
             
             /**
-             * 获取鼠标位置对应的扇形索引
+             * Get slice index at mouse position
              */
             private fun getSliceIndexAt(mouseX: Int, mouseY: Int): Int {
                 val width = this.width
@@ -380,19 +381,19 @@ class PprofChartPanel(
                 val centerX = width / 3
                 val centerY = height / 2 + 20
                 
-                // 计算鼠标相对于圆心的位置
+                // Calculate mouse position relative to center
                 val dx = mouseX - centerX
                 val dy = mouseY - centerY
                 val distance = Math.sqrt((dx * dx + dy * dy).toDouble())
                 
-                // 检查是否在圆内
+                // Check if inside circle
                 if (distance > radius) return -1
                 
-                // 计算角度（从右侧开始，逆时针）
+                // Calculate angle (starting from right, counterclockwise)
                 var angle = Math.toDegrees(Math.atan2(dy.toDouble(), dx.toDouble()))
                 if (angle < 0) angle += 360
                 
-                // 查找对应的扇形
+                // Find corresponding slice
                 val total = topEntries.sumOf { it.flat }.toDouble()
                 var startAngle = 0.0
                 topEntries.forEachIndexed { index, entry ->
@@ -410,7 +411,7 @@ class PprofChartPanel(
             }
             
             /**
-             * 构建饼图工具提示
+             * Build pie chart tooltip
              */
             private fun buildPieTooltip(index: Int): String {
                 val entry = report.entries[index]
@@ -419,16 +420,16 @@ class PprofChartPanel(
                 
                 return buildString {
                     append("<html>")
-                    append("<b>函数占比详情</b><br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionRatioDetails")}</b><br>")
                     append("<hr>")
-                    append("<b>排名：</b> #${index + 1}<br>")
-                    append("<b>函数名：</b> ${entry.functionName}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.rank")}：</b> #${index + 1}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionName")}：</b> ${entry.functionName}<br>")
                     append("<hr>")
-                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit}<br>")
-                    append("<b>占比：</b> ${String.format("%.2f%%", percentage)}<br>")
-                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.flat")}：</b> ${formatValue(entry.flat)} ${report.unit}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.ratio")}：</b> ${String.format("%.2f%%", percentage)}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.cum")}：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
                     append("<hr>")
-                    append("<i>点击可跳转到代码位置</i>")
+                    append("<i>${PprofViewBundle.message("pprof.chart.tooltip.clickToNavigate")}</i>")
                     append("</html>")
                 }
             }
@@ -440,7 +441,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 绘制饼图
+     * Draw pie chart
      */
     private fun drawPieChart(g: Graphics2D, hoveredSliceIndex: Int = -1) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -449,31 +450,31 @@ class PprofChartPanel(
         val width = g.clipBounds.width
         val height = g.clipBounds.height
         
-        // 简单背景
+        // Simple background
         g.color = JBColor.background()
         g.fillRect(0, 0, width, height)
         
-        // 取前 10 个条目
+        // Take top 10 entries
         val topEntries = report.entries.take(10)
         if (topEntries.isEmpty()) return
         
-        // 绘制标题
+        // Draw title
         g.color = JBColor.foreground()
         g.font = Font("SansSerif", Font.BOLD, 16)
-        val title = "Top ${topEntries.size} 函数占比"
+        val title = PprofViewBundle.message("pprof.chart.topFunctionsRatio", topEntries.size)
         val titleWidth = g.fontMetrics.stringWidth(title)
         g.drawString(title, (width - titleWidth) / 2, 30)
         
         g.font = Font("SansSerif", Font.PLAIN, 11)
         g.color = JBColor.GRAY
-        val subtitle = "单位: ${report.unit}"
+        val subtitle = PprofViewBundle.message("pprof.chart.unit", report.unit)
         val subtitleWidth = g.fontMetrics.stringWidth(subtitle)
         g.drawString(subtitle, (width - subtitleWidth) / 2, 48)
         
-        // 根据窗口大小动态调整布局
+        // Dynamically adjust layout based on window size
         val useVerticalLayout = width < 700
         
-        // 计算饼图位置和大小
+        // Calculate pie chart position and size
         val availableWidth = if (useVerticalLayout) width - 80 else (width * 0.5).toInt()
         val availableHeight = if (useVerticalLayout) (height * 0.5).toInt() else height - 120
         val pieSize = minOf(availableWidth, availableHeight, 400)
@@ -482,22 +483,22 @@ class PprofChartPanel(
         val centerX = if (useVerticalLayout) width / 2 else width / 3
         val centerY = if (useVerticalLayout) 80 + radius else height / 2
         
-        // 计算总和
+        // Calculate total
         val total = topEntries.sumOf { it.flat }.toDouble()
         
-        // 绘制饼图
+        // Draw pie chart
         var startAngle = 0.0
         topEntries.forEachIndexed { index, entry ->
             val angle = (entry.flat / total) * 360.0
             val isHovered = index == hoveredSliceIndex
             
-            // 悬停时向外偏移
+            // Offset outward when hovered
             val offsetRadius = if (isHovered) 10 else 0
             val offsetAngle = Math.toRadians(startAngle + angle / 2)
             val offsetX = (offsetRadius * Math.cos(offsetAngle)).toInt()
             val offsetY = (offsetRadius * Math.sin(offsetAngle)).toInt()
             
-            // 绘制扇形
+            // Draw slice
             val color = getBarColor(index)
             g.color = if (isHovered) color.brighter() else color
             g.fillArc(
@@ -509,7 +510,7 @@ class PprofChartPanel(
                 angle.toInt()
             )
             
-            // 绘制边框
+            // Draw border
             g.color = color.darker()
             g.stroke = BasicStroke(if (isHovered) 2f else 1f)
             g.drawArc(
@@ -521,7 +522,7 @@ class PprofChartPanel(
                 angle.toInt()
             )
             
-            // 绘制百分比标签（如果扇形足够大）
+            // Draw percentage label (if slice is large enough)
             if (angle > 10 && radius > 80) {
                 val labelAngle = Math.toRadians(startAngle + angle / 2)
                 val labelRadius = radius * 0.65
@@ -532,11 +533,11 @@ class PprofChartPanel(
                 val percentText = String.format("%.1f%%", entry.flatPercent)
                 val textWidth = g.fontMetrics.stringWidth(percentText)
                 
-                // 标签背景
+                // Label background
                 g.color = Color(255, 255, 255, 200)
                 g.fillRect(labelX - textWidth / 2 - 3, labelY - 10, textWidth + 6, 16)
                 
-                // 标签文本
+                // Label text
                 g.color = Color.BLACK
                 g.drawString(percentText, labelX - textWidth / 2, labelY + 3)
             }
@@ -544,35 +545,35 @@ class PprofChartPanel(
             startAngle += angle
         }
         
-        // 绘制图例
+        // Draw legend
         val legendX = if (useVerticalLayout) 40 else (width * 2 / 3).toInt()
         var legendY = if (useVerticalLayout) centerY + radius + 40 else 80
         val legendItemHeight = 28
         
-        // 图例标题
+        // Legend title
         g.color = JBColor.foreground()
         g.font = Font("SansSerif", Font.BOLD, 13)
-        g.drawString("函数列表", legendX, legendY)
+        g.drawString(PprofViewBundle.message("pprof.chart.functionList"), legendX, legendY)
         legendY += 25
         
         topEntries.forEachIndexed { index, entry ->
             val color = getBarColor(index)
             
-            // 绘制颜色块
+            // Draw color block
             g.color = color
             g.fillRect(legendX, legendY, 20, 20)
             g.color = color.darker()
             g.stroke = BasicStroke(1f)
             g.drawRect(legendX, legendY, 20, 20)
             
-            // 绘制排名
+            // Draw rank
             g.color = Color.WHITE
             g.font = Font("SansSerif", Font.BOLD, 11)
             val rankStr = "${index + 1}"
             val rankWidth = g.fontMetrics.stringWidth(rankStr)
             g.drawString(rankStr, legendX + (20 - rankWidth) / 2, legendY + 15)
             
-            // 绘制文本
+            // Draw text
             g.color = JBColor.foreground()
             g.font = Font("SansSerif", Font.BOLD, 11)
             val percentText = String.format("%.1f%%", entry.flatPercent)
@@ -589,10 +590,18 @@ class PprofChartPanel(
     }
     
     /**
-     * 创建表格面板
+     * Create table panel
      */
     private fun createTablePanel(): JComponent {
-        val columnNames = arrayOf("排名", "函数名", "Flat", "Flat%", "Sum%", "Cum", "Cum%")
+        val columnNames = arrayOf(
+            PprofViewBundle.message("pprof.chart.table.rank"),
+            PprofViewBundle.message("pprof.chart.table.functionName"),
+            PprofViewBundle.message("pprof.chart.table.flat"),
+            PprofViewBundle.message("pprof.chart.table.flatPercent"),
+            PprofViewBundle.message("pprof.chart.table.sumPercent"),
+            PprofViewBundle.message("pprof.chart.table.cum"),
+            PprofViewBundle.message("pprof.chart.table.cumPercent")
+        )
         val data = report.entries.mapIndexed { index, entry ->
             arrayOf(
                 "${index + 1}",
@@ -613,22 +622,22 @@ class PprofChartPanel(
         table.showVerticalLines = true
         table.showHorizontalLines = true
         
-        // 设置表头样式
+        // Set table header style
         val header = table.tableHeader
         header.font = Font("SansSerif", Font.BOLD, 12)
         header.background = JBColor.background()
         header.foreground = JBColor.foreground()
         
-        // 设置列宽
-        table.columnModel.getColumn(0).preferredWidth = 50  // 排名
-        table.columnModel.getColumn(1).preferredWidth = 400 // 函数名
+        // Set column widths
+        table.columnModel.getColumn(0).preferredWidth = 50  // Rank
+        table.columnModel.getColumn(1).preferredWidth = 400 // Function name
         table.columnModel.getColumn(2).preferredWidth = 80  // Flat
         table.columnModel.getColumn(3).preferredWidth = 70  // Flat%
         table.columnModel.getColumn(4).preferredWidth = 70  // Sum%
         table.columnModel.getColumn(5).preferredWidth = 80  // Cum
         table.columnModel.getColumn(6).preferredWidth = 70  // Cum%
         
-        // 设置单元格渲染器（添加颜色）
+        // Set cell renderer (add colors)
         table.setDefaultRenderer(Any::class.java, object : javax.swing.table.DefaultTableCellRenderer() {
             override fun getTableCellRendererComponent(
                 table: JTable,
@@ -641,14 +650,14 @@ class PprofChartPanel(
                 val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
                 
                 if (!isSelected) {
-                    // 交替行颜色
+                    // Alternating row colors
                     c.background = if (row % 2 == 0) {
                         JBColor.background()
                     } else {
                         JBColor(Color(245, 245, 245), Color(50, 50, 50))
                     }
                     
-                    // 排名列使用颜色标识
+                    // Use color for rank column
                     if (column == 0 && row < 10) {
                         c.foreground = getBarColor(row)
                         font = Font("SansSerif", Font.BOLD, 12)
@@ -658,10 +667,10 @@ class PprofChartPanel(
                     }
                 }
                 
-                // 数值列右对齐
+                // Right align numeric columns
                 horizontalAlignment = if (column in 2..6) SwingConstants.RIGHT else SwingConstants.LEFT
                 
-                // 函数名列显示为可点击的链接样式
+                // Display function name column as clickable link style
                 if (column == 1 && project != null && pprofFile != null) {
                     cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                     if (!isSelected) {
@@ -673,14 +682,14 @@ class PprofChartPanel(
             }
         })
         
-        // 添加鼠标监听器
+        // Add mouse listener
         if (project != null && pprofFile != null) {
             table.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
                     val row = table.rowAtPoint(e.point)
                     val column = table.columnAtPoint(e.point)
                     
-                    // 只处理函数名列的点击
+                    // Only handle clicks on function name column
                     if (row >= 0 && column == 1) {
                         val functionName = table.getValueAt(row, column) as String
                         navigateToCode(functionName)
@@ -699,7 +708,7 @@ class PprofChartPanel(
                 }
             })
             
-            // 添加鼠标移动监听器，实现悬停工具提示
+            // Add mouse motion listener for hover tooltip
             table.addMouseMotionListener(object : MouseAdapter() {
                 override fun mouseMoved(e: MouseEvent) {
                     val row = table.rowAtPoint(e.point)
@@ -714,7 +723,7 @@ class PprofChartPanel(
                 }
             })
         } else {
-            // 即使没有导航功能，也提供工具提示
+            // Provide tooltip even without navigation functionality
             table.addMouseMotionListener(object : MouseAdapter() {
                 override fun mouseMoved(e: MouseEvent) {
                     val row = table.rowAtPoint(e.point)
@@ -737,30 +746,30 @@ class PprofChartPanel(
     }
     
     /**
-     * 构建表格工具提示
+     * Build table tooltip
      */
     private fun buildTableTooltip(row: Int, column: Int, entry: com.github.spelens.pprofview.parser.PprofEntry): String {
         return buildString {
             append("<html>")
-            append("<b>性能数据详情</b><br>")
+            append("<b>${PprofViewBundle.message("pprof.chart.tooltip.performanceDataDetails")}</b><br>")
             append("<hr>")
-            append("<b>排名：</b> #${row + 1}<br>")
-            append("<b>函数名：</b><br>")
+            append("<b>${PprofViewBundle.message("pprof.chart.tooltip.rank")}：</b> #${row + 1}<br>")
+            append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionName")}：</b><br>")
             append("<code>${entry.functionName}</code><br>")
             append("<hr>")
             append("<table cellpadding='2'>")
-            append("<tr><td><b>Flat：</b></td><td>${formatValue(entry.flat)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.flatPercent)})</td></tr>")
-            append("<tr><td><b>Cum：</b></td><td>${formatValue(entry.cum)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.cumPercent)})</td></tr>")
-            append("<tr><td><b>Sum%：</b></td><td colspan='2'>${String.format("%.2f%%", entry.sumPercent)}</td></tr>")
+            append("<tr><td><b>${PprofViewBundle.message("pprof.chart.tooltip.flat")}：</b></td><td>${formatValue(entry.flat)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.flatPercent)})</td></tr>")
+            append("<tr><td><b>${PprofViewBundle.message("pprof.chart.tooltip.cum")}：</b></td><td>${formatValue(entry.cum)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.cumPercent)})</td></tr>")
+            append("<tr><td><b>${PprofViewBundle.message("pprof.chart.tooltip.sumPercent")}：</b></td><td colspan='2'>${String.format("%.2f%%", entry.sumPercent)}</td></tr>")
             append("</table>")
             append("<hr>")
             append("<small>")
-            append("<b>说明：</b><br>")
-            append("• <b>Flat</b>: 函数自身执行时间<br>")
-            append("• <b>Cum</b>: 函数及其调用的所有函数的总时间<br>")
-            append("• <b>Sum%</b>: 累计百分比")
+            append("<b>${PprofViewBundle.message("pprof.chart.tooltip.description")}：</b><br>")
+            append("• ${PprofViewBundle.message("pprof.chart.tooltip.flatDescription")}<br>")
+            append("• ${PprofViewBundle.message("pprof.chart.tooltip.cumDescription")}<br>")
+            append("• ${PprofViewBundle.message("pprof.chart.tooltip.sumPercentDescription")}")
             if (project != null && pprofFile != null && column == 1) {
-                append("<br><br><i>💡 点击函数名可跳转到代码位置</i>")
+                append("<br><br><i>💡 ${PprofViewBundle.message("pprof.chart.tooltip.clickToNavigate")}</i>")
             }
             append("</small>")
             append("</html>")
@@ -768,20 +777,20 @@ class PprofChartPanel(
     }
     
     /**
-     * 导航到代码位置
+     * Navigate to code location
      */
     private fun navigateToCode(functionName: String) {
         if (project == null || pprofFile == null) {
-            println("ERROR: project 或 pprofFile 为 null")
+            println("ERROR: project or pprofFile is null")
             println("  - project: $project")
             println("  - pprofFile: $pprofFile")
             
-            // 显示错误通知
+            // Show error notification
             com.intellij.notification.NotificationGroupManager.getInstance()
                 .getNotificationGroup("pprofview.notifications")
                 .createNotification(
-                    "代码导航失败",
-                    "项目或 pprof 文件信息缺失",
+                    PprofViewBundle.message("pprof.chart.navigation.failed"),
+                    PprofViewBundle.message("pprof.chart.navigation.missingInfo"),
                     com.intellij.notification.NotificationType.ERROR
                 )
                 .notify(project)
@@ -790,27 +799,27 @@ class PprofChartPanel(
         
         val startTime = System.currentTimeMillis()
         println("========================================")
-        println("用户点击函数: $functionName")
-        println("时间: ${java.time.LocalDateTime.now()}")
-        println("项目: ${project.name}")
-        println("pprof 文件: ${pprofFile.path}")
+        println("User clicked function: $functionName")
+        println("Time: ${java.time.LocalDateTime.now()}")
+        println("Project: ${project.name}")
+        println("pprof file: ${pprofFile.path}")
         
         try {
             val navigationService = PprofCodeNavigationService.getInstance(project)
             navigationService.navigateToFunction(pprofFile, functionName)
             
             val duration = System.currentTimeMillis() - startTime
-            println("点击响应总耗时: ${duration}ms")
+            println("Click response total time: ${duration}ms")
         } catch (e: Exception) {
-            println("ERROR: 导航失败")
+            println("ERROR: Navigation failed")
             e.printStackTrace()
             
-            // 显示错误通知
+            // Show error notification
             com.intellij.notification.NotificationGroupManager.getInstance()
                 .getNotificationGroup("pprofview.notifications")
                 .createNotification(
-                    "代码导航失败",
-                    "错误: ${e.message}",
+                    PprofViewBundle.message("pprof.chart.navigation.failed"),
+                    "${PprofViewBundle.message("pprof.chart.navigation.failed")}: ${e.message}",
                     com.intellij.notification.NotificationType.ERROR
                 )
                 .notify(project)
@@ -819,31 +828,31 @@ class PprofChartPanel(
     }
     
     /**
-     * 获取柱状图颜色
+     * Get bar chart color
      */
     private fun getBarColor(index: Int): Color {
         val colors = arrayOf(
-            Color(66, 133, 244),   // 蓝色
-            Color(234, 67, 53),    // 红色
-            Color(251, 188, 5),    // 黄色
-            Color(52, 168, 83),    // 绿色
-            Color(255, 109, 0),    // 橙色
-            Color(156, 39, 176),   // 紫色
-            Color(0, 172, 193),    // 青色
-            Color(255, 87, 34),    // 深橙色
-            Color(121, 85, 72),    // 棕色
-            Color(158, 158, 158)   // 灰色
+            Color(66, 133, 244),   // Blue
+            Color(234, 67, 53),    // Red
+            Color(251, 188, 5),    // Yellow
+            Color(52, 168, 83),    // Green
+            Color(255, 109, 0),    // Orange
+            Color(156, 39, 176),   // Purple
+            Color(0, 172, 193),    // Cyan
+            Color(255, 87, 34),    // Deep Orange
+            Color(121, 85, 72),    // Brown
+            Color(158, 158, 158)   // Gray
         )
         return colors[index % colors.size]
     }
     
     /**
-     * 截断函数名
+     * Truncate function name
      */
     private fun truncateFunctionName(name: String, maxLength: Int): String {
         if (name.length <= maxLength) return name
         
-        // 尝试只保留函数名部分
+        // Try to keep only the function name part
         val parts = name.split(".")
         val funcName = parts.lastOrNull() ?: name
         
@@ -855,7 +864,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 格式化数值
+     * Format value
      */
     private fun formatValue(value: Long): String {
         return when {
@@ -866,7 +875,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 创建热力图面板
+     * Create heatmap panel
      */
     private fun createHeatmapPanel(): JComponent {
         val panel = object : JPanel() {
@@ -880,7 +889,7 @@ class PprofChartPanel(
             }
             
             init {
-                // 添加鼠标移动监听器
+                // Add mouse motion listener
                 addMouseMotionListener(object : MouseAdapter() {
                     override fun mouseMoved(e: MouseEvent) {
                         val newHoveredRect = treemapRects.firstOrNull { rect ->
@@ -897,7 +906,7 @@ class PprofChartPanel(
                     }
                 })
                 
-                // 添加鼠标点击监听器
+                // Add mouse click listener
                 addMouseListener(object : MouseAdapter() {
                     override fun mouseClicked(e: MouseEvent) {
                         val clickedRect = treemapRects.firstOrNull { rect ->
@@ -921,24 +930,24 @@ class PprofChartPanel(
             }
             
             /**
-             * 构建热力图工具提示
+             * Build heatmap tooltip
              */
             private fun buildHeatmapTooltip(rect: TreemapRect): String {
                 val entry = rect.entry
                 return buildString {
                     append("<html>")
-                    append("<b>函数热力详情</b><br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionHeatDetails")}</b><br>")
                     append("<hr>")
-                    append("<b>排名：</b> #${rect.index + 1}<br>")
-                    append("<b>函数名：</b><br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.rank")}：</b> #${rect.index + 1}<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.functionName")}：</b><br>")
                     append("<code>${entry.functionName}</code><br>")
                     append("<hr>")
-                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
-                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.flat")}：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
+                    append("<b>${PprofViewBundle.message("pprof.chart.tooltip.cum")}：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
                     append("<hr>")
-                    append("<i>💡 矩形面积代表性能占比<br>")
-                    append("颜色深浅代表热点程度<br>")
-                    append("点击可跳转到代码位置</i>")
+                    append("<i>💡 ${PprofViewBundle.message("pprof.chart.tooltip.areaRepresentsRatio")}<br>")
+                    append("${PprofViewBundle.message("pprof.chart.tooltip.colorRepresentsHeat")}<br>")
+                    append("${PprofViewBundle.message("pprof.chart.tooltip.clickToNavigate")}</i>")
                     append("</html>")
                 }
             }
@@ -951,7 +960,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 绘制热力图（矩形树图）
+     * Draw heatmap (treemap)
      */
     private fun drawHeatmap(g: Graphics2D, treemapRects: MutableList<TreemapRect>) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -960,7 +969,7 @@ class PprofChartPanel(
         val width = g.clipBounds.width
         val height = g.clipBounds.height
         
-        // 根据窗口大小动态调整
+        // Dynamically adjust based on window size
         val margin = maxOf(30, width / 30)
         val topCount = when {
             width < 500 -> 12
@@ -968,31 +977,31 @@ class PprofChartPanel(
             else -> 20
         }
         
-        // 简单背景
+        // Simple background
         g.color = JBColor.background()
         g.fillRect(0, 0, width, height)
         
-        // 取前 N 个条目
+        // Take top N entries
         val topEntries = report.entries.take(topCount)
         if (topEntries.isEmpty()) return
         
-        // 绘制标题
+        // Draw title
         g.color = JBColor.foreground()
         g.font = Font("SansSerif", Font.BOLD, 16)
-        val title = "Top $topCount 函数热力图"
+        val title = PprofViewBundle.message("pprof.chart.topFunctionsHeatmap", topCount)
         val titleWidth = g.fontMetrics.stringWidth(title)
         g.drawString(title, (width - titleWidth) / 2, 25)
         
         g.font = Font("SansSerif", Font.PLAIN, 10)
         g.color = JBColor.GRAY
-        val subtitle = "矩形面积 = 性能占比 | 颜色深浅 = 热点程度"
+        val subtitle = PprofViewBundle.message("pprof.chart.heatmapSubtitle")
         val subtitleWidth = g.fontMetrics.stringWidth(subtitle)
         g.drawString(subtitle, (width - subtitleWidth) / 2, 42)
         
-        // 计算总值
+        // Calculate total value
         val total = topEntries.sumOf { it.flat }.toDouble()
         
-        // 使用简化的网格布局
+        // Use simplified grid layout
         val availableWidth = width - 2 * margin
         val availableHeight = height - margin - 55
         
@@ -1009,7 +1018,7 @@ class PprofChartPanel(
     }
     
     /**
-     * 布局矩形树图
+     * Layout treemap
      */
     private fun layoutTreemap(
         entries: List<com.github.spelens.pprofview.parser.PprofEntry>,
@@ -1023,7 +1032,7 @@ class PprofChartPanel(
     ) {
         if (entries.isEmpty() || width <= 0 || height <= 0) return
         
-        // 使用网格布局
+        // Use grid layout
         val cols = Math.ceil(Math.sqrt(entries.size.toDouble())).toInt()
         val rows = Math.ceil(entries.size.toDouble() / cols).toInt()
         
@@ -1040,7 +1049,7 @@ class PprofChartPanel(
             val rectWidth = cellWidth - 2 * padding
             val rectHeight = cellHeight - 2 * padding
             
-            // 保存矩形信息
+            // Save rectangle information
             val treemapRect = TreemapRect(
                 x = rectX,
                 y = rectY,
@@ -1051,18 +1060,18 @@ class PprofChartPanel(
             )
             rects.add(treemapRect)
             
-            // 绘制矩形
+            // Draw rectangle
             drawTreemapRect(g, treemapRect, index)
         }
     }
     
     /**
-     * 绘制单个矩形
+     * Draw single rectangle
      */
     private fun drawTreemapRect(g: Graphics2D, rect: TreemapRect, index: Int) {
         val entry = rect.entry
         
-        // 根据性能数据选择颜色深浅
+        // Choose color intensity based on performance data
         val baseColor = getBarColor(index)
         val intensity = (entry.flatPercent / 100.0).coerceIn(0.3, 1.0)
         val heatColor = Color(
@@ -1071,20 +1080,20 @@ class PprofChartPanel(
             (baseColor.blue * intensity).toInt()
         )
         
-        // 绘制矩形
+        // Draw rectangle
         g.color = heatColor
         g.fillRect(rect.x, rect.y, rect.width, rect.height)
         
-        // 绘制边框
+        // Draw border
         g.color = heatColor.darker()
         g.stroke = BasicStroke(1f)
         g.drawRect(rect.x, rect.y, rect.width, rect.height)
         
-        // 绘制文本（根据矩形大小调整）
+        // Draw text (adjust based on rectangle size)
         g.color = Color.WHITE
         
         if (rect.width > 80 && rect.height > 50) {
-            // 大矩形：显示排名、百分比、函数名
+            // Large rectangle: show rank, percentage, function name
             g.font = Font("SansSerif", Font.BOLD, 14)
             val rankText = "#${index + 1}"
             val rankWidth = g.fontMetrics.stringWidth(rankText)
@@ -1103,7 +1112,7 @@ class PprofChartPanel(
                 g.drawString(funcName, rect.x + (rect.width - funcWidth) / 2, rect.y + rect.height - 8)
             }
         } else if (rect.width > 45 && rect.height > 30) {
-            // 中等矩形：显示排名和百分比
+            // Medium rectangle: show rank and percentage
             g.font = Font("SansSerif", Font.BOLD, 11)
             val rankText = "#${index + 1}"
             val rankWidth = g.fontMetrics.stringWidth(rankText)
@@ -1114,7 +1123,7 @@ class PprofChartPanel(
             val percentWidth = g.fontMetrics.stringWidth(percentText)
             g.drawString(percentText, rect.x + (rect.width - percentWidth) / 2, rect.y + rect.height / 2 + 11)
         } else if (rect.width > 25 && rect.height > 20) {
-            // 小矩形：只显示排名
+            // Small rectangle: show rank only
             g.font = Font("SansSerif", Font.BOLD, 9)
             val rankText = "#${index + 1}"
             val rankWidth = g.fontMetrics.stringWidth(rankText)
@@ -1124,7 +1133,7 @@ class PprofChartPanel(
 }
 
 /**
- * 矩形树图的矩形信息
+ * Rectangle information for treemap
  */
 data class TreemapRect(
     val x: Int,
