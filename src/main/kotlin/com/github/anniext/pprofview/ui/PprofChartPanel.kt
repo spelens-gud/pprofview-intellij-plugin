@@ -107,6 +107,54 @@ class PprofChartPanel(
         card.background = JBColor.background()
         card.maximumSize = Dimension(Int.MAX_VALUE, 80)
         
+        // 添加工具提示
+        card.toolTipText = buildString {
+            append("<html>")
+            append("<b>🔥 热点函数 #$rank</b><br>")
+            append("<hr>")
+            append("<b>完整函数名：</b><br>")
+            append("<code>${entry.functionName}</code><br>")
+            append("<hr>")
+            append("<b>性能指标：</b><br>")
+            append("• Flat: ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
+            append("• Cum: ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+            append("• Sum%: ${String.format("%.2f%%", entry.sumPercent)}")
+            if (project != null && pprofFile != null) {
+                append("<br><hr>")
+                append("<i>💡 点击可跳转到代码位置</i>")
+            }
+            append("</html>")
+        }
+        
+        // 添加鼠标悬停效果
+        card.addMouseListener(object : MouseAdapter() {
+            override fun mouseEntered(e: MouseEvent) {
+                card.border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(getBarColor(rank - 1), 2),
+                    BorderFactory.createEmptyBorder(9, 14, 9, 14)
+                )
+                card.cursor = if (project != null && pprofFile != null) {
+                    Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                } else {
+                    Cursor.getDefaultCursor()
+                }
+            }
+            
+            override fun mouseExited(e: MouseEvent) {
+                card.border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(JBColor.border(), 1),
+                    BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                )
+                card.cursor = Cursor.getDefaultCursor()
+            }
+            
+            override fun mouseClicked(e: MouseEvent) {
+                if (project != null && pprofFile != null) {
+                    navigateToCode(entry.functionName)
+                }
+            }
+        })
+        
         // 左侧：排名和颜色指示器
         val leftPanel = JBPanel<JBPanel<*>>()
         leftPanel.layout = BoxLayout(leftPanel, BoxLayout.X_AXIS)
@@ -196,9 +244,102 @@ class PprofChartPanel(
      */
     private fun createBarChartPanel(): JComponent {
         val panel = object : JPanel() {
+            private var hoveredBarIndex = -1
+            
             override fun paintComponent(g: Graphics) {
                 super.paintComponent(g)
-                drawBarChart(g as Graphics2D)
+                drawBarChart(g as Graphics2D, hoveredBarIndex)
+            }
+            
+            init {
+                // 添加鼠标移动监听器，实现悬停效果
+                addMouseMotionListener(object : MouseAdapter() {
+                    override fun mouseMoved(e: MouseEvent) {
+                        val newHoveredIndex = getBarIndexAt(e.x, e.y)
+                        if (newHoveredIndex != hoveredBarIndex) {
+                            hoveredBarIndex = newHoveredIndex
+                            repaint()
+                            
+                            // 更新工具提示
+                            toolTipText = if (hoveredBarIndex >= 0) {
+                                buildBarTooltip(hoveredBarIndex)
+                            } else {
+                                null
+                            }
+                        }
+                    }
+                })
+                
+                // 添加鼠标点击监听器，支持导航
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent) {
+                        val barIndex = getBarIndexAt(e.x, e.y)
+                        if (barIndex >= 0) {
+                            val entry = report.entries[barIndex]
+                            navigateToCode(entry.functionName)
+                        }
+                    }
+                    
+                    override fun mouseExited(e: MouseEvent) {
+                        if (hoveredBarIndex != -1) {
+                            hoveredBarIndex = -1
+                            repaint()
+                            toolTipText = null
+                        }
+                    }
+                })
+            }
+            
+            /**
+             * 获取鼠标位置对应的柱子索引
+             */
+            private fun getBarIndexAt(mouseX: Int, mouseY: Int): Int {
+                val width = this.width
+                val height = this.height
+                val margin = 80
+                val chartWidth = width - 2 * margin
+                val chartHeight = height - 2 * margin - 100
+                
+                val topEntries = report.entries.take(15)
+                if (topEntries.isEmpty()) return -1
+                
+                val barWidth = chartWidth / topEntries.size
+                val barActualWidth = (barWidth * 0.7).toInt()
+                val maxValue = topEntries.maxOfOrNull { it.flat } ?: 1L
+                
+                topEntries.forEachIndexed { index, entry ->
+                    val barHeight = (entry.flat.toDouble() / maxValue * chartHeight).toInt()
+                    val x = margin + index * barWidth + (barWidth - barActualWidth) / 2
+                    val y = height - margin - barHeight
+                    
+                    if (mouseX >= x && mouseX <= x + barActualWidth &&
+                        mouseY >= y && mouseY <= height - margin) {
+                        return index
+                    }
+                }
+                
+                return -1
+            }
+            
+            /**
+             * 构建柱状图工具提示
+             */
+            private fun buildBarTooltip(index: Int): String {
+                val entry = report.entries[index]
+                return buildString {
+                    append("<html>")
+                    append("<b>🔥 函数性能详情</b><br>")
+                    append("<hr>")
+                    append("<b>排名：</b> #${index + 1}<br>")
+                    append("<b>函数名：</b> ${entry.functionName}<br>")
+                    append("<hr>")
+                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
+                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<b>Sum%：</b> ${String.format("%.2f%%", entry.sumPercent)}<br>")
+                    append("<hr>")
+                    append("<i>点击可跳转到代码位置</i>")
+                    append("</html>")
+                }
             }
         }
         panel.preferredSize = Dimension(800, 600)
@@ -210,7 +351,7 @@ class PprofChartPanel(
     /**
      * 绘制柱状图
      */
-    private fun drawBarChart(g: Graphics2D) {
+    private fun drawBarChart(g: Graphics2D, hoveredBarIndex: Int = -1) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
         
@@ -264,23 +405,33 @@ class PprofChartPanel(
             val x = margin + index * barWidth + (barWidth - barActualWidth) / 2
             val y = height - margin - barHeight
             
+            // 判断是否为悬停状态
+            val isHovered = index == hoveredBarIndex
+            
             // 绘制阴影
             g.color = JBColor(Color(0, 0, 0, 30), Color(0, 0, 0, 50))
             g.fillRect(x + 3, y + 3, barActualWidth, barHeight)
             
             // 绘制柱子（渐变效果）
             val color = getBarColor(index)
+            val displayColor = if (isHovered) color.brighter() else color
             val gradient = GradientPaint(
-                x.toFloat(), y.toFloat(), color.brighter(),
-                x.toFloat(), (y + barHeight).toFloat(), color
+                x.toFloat(), y.toFloat(), displayColor.brighter(),
+                x.toFloat(), (y + barHeight).toFloat(), displayColor
             )
             g.paint = gradient
             g.fillRect(x, y, barActualWidth, barHeight)
             
-            // 绘制边框
-            g.color = color.darker()
-            g.stroke = BasicStroke(1.5f)
+            // 绘制边框（悬停时加粗）
+            g.color = if (isHovered) color.darker().darker() else color.darker()
+            g.stroke = BasicStroke(if (isHovered) 2.5f else 1.5f)
             g.drawRect(x, y, barActualWidth, barHeight)
+            
+            // 悬停时绘制高亮效果
+            if (isHovered) {
+                g.color = Color(255, 255, 255, 80)
+                g.fillRect(x, y, barActualWidth, barHeight / 3)
+            }
             
             // 绘制数值
             g.color = JBColor.foreground()
@@ -317,9 +468,117 @@ class PprofChartPanel(
      */
     private fun createPieChartPanel(): JComponent {
         val panel = object : JPanel() {
+            private var hoveredSliceIndex = -1
+            
             override fun paintComponent(g: Graphics) {
                 super.paintComponent(g)
-                drawPieChart(g as Graphics2D)
+                drawPieChart(g as Graphics2D, hoveredSliceIndex)
+            }
+            
+            init {
+                // 添加鼠标移动监听器
+                addMouseMotionListener(object : MouseAdapter() {
+                    override fun mouseMoved(e: MouseEvent) {
+                        val newHoveredIndex = getSliceIndexAt(e.x, e.y)
+                        if (newHoveredIndex != hoveredSliceIndex) {
+                            hoveredSliceIndex = newHoveredIndex
+                            repaint()
+                            
+                            // 更新工具提示
+                            toolTipText = if (hoveredSliceIndex >= 0) {
+                                buildPieTooltip(hoveredSliceIndex)
+                            } else {
+                                null
+                            }
+                        }
+                    }
+                })
+                
+                // 添加鼠标点击监听器
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent) {
+                        val sliceIndex = getSliceIndexAt(e.x, e.y)
+                        if (sliceIndex >= 0) {
+                            val entry = report.entries[sliceIndex]
+                            navigateToCode(entry.functionName)
+                        }
+                    }
+                    
+                    override fun mouseExited(e: MouseEvent) {
+                        if (hoveredSliceIndex != -1) {
+                            hoveredSliceIndex = -1
+                            repaint()
+                            toolTipText = null
+                        }
+                    }
+                })
+            }
+            
+            /**
+             * 获取鼠标位置对应的扇形索引
+             */
+            private fun getSliceIndexAt(mouseX: Int, mouseY: Int): Int {
+                val width = this.width
+                val height = this.height
+                val topEntries = report.entries.take(10)
+                if (topEntries.isEmpty()) return -1
+                
+                val pieWidth = minOf(width * 0.5, height - 150.0).toInt()
+                val radius = pieWidth / 2
+                val centerX = width / 3
+                val centerY = height / 2 + 20
+                
+                // 计算鼠标相对于圆心的位置
+                val dx = mouseX - centerX
+                val dy = mouseY - centerY
+                val distance = Math.sqrt((dx * dx + dy * dy).toDouble())
+                
+                // 检查是否在圆内
+                if (distance > radius) return -1
+                
+                // 计算角度（从右侧开始，逆时针）
+                var angle = Math.toDegrees(Math.atan2(dy.toDouble(), dx.toDouble()))
+                if (angle < 0) angle += 360
+                
+                // 查找对应的扇形
+                val total = topEntries.sumOf { it.flat }.toDouble()
+                var startAngle = 0.0
+                topEntries.forEachIndexed { index, entry ->
+                    val sliceAngle = (entry.flat / total) * 360.0
+                    val endAngle = startAngle + sliceAngle
+                    
+                    if (angle >= startAngle && angle < endAngle) {
+                        return index
+                    }
+                    
+                    startAngle = endAngle
+                }
+                
+                return -1
+            }
+            
+            /**
+             * 构建饼图工具提示
+             */
+            private fun buildPieTooltip(index: Int): String {
+                val entry = report.entries[index]
+                val total = report.entries.take(10).sumOf { it.flat }
+                val percentage = (entry.flat.toDouble() / total * 100)
+                
+                return buildString {
+                    append("<html>")
+                    append("<b>📊 函数占比详情</b><br>")
+                    append("<hr>")
+                    append("<b>排名：</b> #${index + 1}<br>")
+                    append("<b>函数名：</b> ${entry.functionName}<br>")
+                    append("<hr>")
+                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit}<br>")
+                    append("<b>占比：</b> ${String.format("%.2f%%", percentage)}<br>")
+                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<hr>")
+                    append("<i>点击可跳转到代码位置</i>")
+                    append("</html>")
+                }
             }
         }
         panel.preferredSize = Dimension(800, 600)
@@ -331,7 +590,7 @@ class PprofChartPanel(
     /**
      * 绘制饼图
      */
-    private fun drawPieChart(g: Graphics2D) {
+    private fun drawPieChart(g: Graphics2D, hoveredSliceIndex: Int = -1) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
         
@@ -375,25 +634,33 @@ class PprofChartPanel(
         var startAngle = 0.0
         topEntries.forEachIndexed { index, entry ->
             val angle = (entry.flat / total) * 360.0
+            val isHovered = index == hoveredSliceIndex
+            
+            // 计算扇形位置（悬停时向外偏移）
+            val offsetRadius = if (isHovered) 10 else 0
+            val offsetAngle = Math.toRadians(startAngle + angle / 2)
+            val offsetX = (offsetRadius * Math.cos(offsetAngle)).toInt()
+            val offsetY = (offsetRadius * Math.sin(offsetAngle)).toInt()
             
             // 绘制扇形（渐变效果）
             val color = getBarColor(index)
-            g.color = color
+            val displayColor = if (isHovered) color.brighter() else color
+            g.color = displayColor
             g.fillArc(
-                centerX - radius,
-                centerY - radius,
+                centerX - radius + offsetX,
+                centerY - radius + offsetY,
                 radius * 2,
                 radius * 2,
                 startAngle.toInt(),
                 angle.toInt()
             )
             
-            // 绘制边框
-            g.color = color.darker()
-            g.stroke = BasicStroke(2f)
+            // 绘制边框（悬停时加粗）
+            g.color = if (isHovered) displayColor.darker().darker() else displayColor.darker()
+            g.stroke = BasicStroke(if (isHovered) 3f else 2f)
             g.drawArc(
-                centerX - radius,
-                centerY - radius,
+                centerX - radius + offsetX,
+                centerY - radius + offsetY,
                 radius * 2,
                 radius * 2,
                 startAngle.toInt(),
@@ -541,7 +808,7 @@ class PprofChartPanel(
             }
         })
         
-        // 添加鼠标点击监听器
+        // 添加鼠标监听器
         if (project != null && pprofFile != null) {
             table.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
@@ -566,12 +833,73 @@ class PprofChartPanel(
                     table.cursor = Cursor.getDefaultCursor()
                 }
             })
+            
+            // 添加鼠标移动监听器，实现悬停工具提示
+            table.addMouseMotionListener(object : MouseAdapter() {
+                override fun mouseMoved(e: MouseEvent) {
+                    val row = table.rowAtPoint(e.point)
+                    val column = table.columnAtPoint(e.point)
+                    
+                    if (row >= 0 && row < report.entries.size) {
+                        val entry = report.entries[row]
+                        table.toolTipText = buildTableTooltip(row, column, entry)
+                    } else {
+                        table.toolTipText = null
+                    }
+                }
+            })
+        } else {
+            // 即使没有导航功能，也提供工具提示
+            table.addMouseMotionListener(object : MouseAdapter() {
+                override fun mouseMoved(e: MouseEvent) {
+                    val row = table.rowAtPoint(e.point)
+                    val column = table.columnAtPoint(e.point)
+                    
+                    if (row >= 0 && row < report.entries.size) {
+                        val entry = report.entries[row]
+                        table.toolTipText = buildTableTooltip(row, column, entry)
+                    } else {
+                        table.toolTipText = null
+                    }
+                }
+            })
         }
         
         val scrollPane = JBScrollPane(table)
         scrollPane.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
         
         return scrollPane
+    }
+    
+    /**
+     * 构建表格工具提示
+     */
+    private fun buildTableTooltip(row: Int, column: Int, entry: com.github.anniext.pprofview.parser.PprofEntry): String {
+        return buildString {
+            append("<html>")
+            append("<b>📈 性能数据详情</b><br>")
+            append("<hr>")
+            append("<b>排名：</b> #${row + 1}<br>")
+            append("<b>函数名：</b><br>")
+            append("<code>${entry.functionName}</code><br>")
+            append("<hr>")
+            append("<table cellpadding='2'>")
+            append("<tr><td><b>Flat：</b></td><td>${formatValue(entry.flat)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.flatPercent)})</td></tr>")
+            append("<tr><td><b>Cum：</b></td><td>${formatValue(entry.cum)} ${report.unit}</td><td>(${String.format("%.2f%%", entry.cumPercent)})</td></tr>")
+            append("<tr><td><b>Sum%：</b></td><td colspan='2'>${String.format("%.2f%%", entry.sumPercent)}</td></tr>")
+            append("</table>")
+            append("<hr>")
+            append("<small>")
+            append("<b>说明：</b><br>")
+            append("• <b>Flat</b>: 函数自身执行时间<br>")
+            append("• <b>Cum</b>: 函数及其调用的所有函数的总时间<br>")
+            append("• <b>Sum%</b>: 累计百分比")
+            if (project != null && pprofFile != null && column == 1) {
+                append("<br><br><i>💡 点击函数名可跳转到代码位置</i>")
+            }
+            append("</small>")
+            append("</html>")
+        }
     }
     
     /**
