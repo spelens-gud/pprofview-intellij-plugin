@@ -427,9 +427,21 @@ class PprofRunState(
     private fun injectPprofInit(): File? {
         val logger = thisLogger()
         try {
+            // 根据当前语言环境选择对应的模板文件
+            val locale = java.util.Locale.getDefault()
+            val templateFileName = when {
+                locale.language == "zh" -> "pprof_runtime/pprof_init_zh_CN.go"
+                else -> "pprof_runtime/pprof_init_en.go"
+            }
+            
+            logger.info("Using pprof template: $templateFileName (locale: ${locale.language})")
+            
             // Read pprof_init.go template from resources
-            val inputStream = javaClass.classLoader.getResourceAsStream("pprof_runtime/pprof_init.go")
-                ?: return null
+            val inputStream = javaClass.classLoader.getResourceAsStream(templateFileName)
+                ?: run {
+                    logger.warn("Cannot find template $templateFileName, falling back to pprof_init.go")
+                    javaClass.classLoader.getResourceAsStream("pprof_runtime/pprof_init.go")
+                } ?: return null
             
             // Determine target directory - must be in same directory as user code
             val targetDir = when (PprofRunKind.fromString(configuration.runKind)) {
