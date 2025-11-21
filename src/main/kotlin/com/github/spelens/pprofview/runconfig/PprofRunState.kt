@@ -30,7 +30,7 @@ class PprofRunState(
     override fun startProcess(): ProcessHandler {
         val logger = thisLogger()
         
-        // 清除 pprof Output 窗口的旧数据
+        // 清除 Pprof Plus: Visual Analytics 窗口的旧数据
         clearPprofOutput()
         
         val collectionMode = PprofCollectionMode.fromString(configuration.collectionMode)
@@ -699,7 +699,7 @@ func init() {
                     val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
                     if (virtualFile != null) {
                         logger.info("生成 ${file.name} 的文本报告（类型: ${profileType.displayName}）")
-                        // 使用 TEXT 类型在 pprof Output 窗口显示
+                        // 使用 TEXT 类型在 Pprof Plus: Visual Analytics 窗口显示
                         val visualizationService = project.service<PprofVisualizationService>()
                         visualizationService.visualize(virtualFile, VisualizationType.TEXT)
                     }

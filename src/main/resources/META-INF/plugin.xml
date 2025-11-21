@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.anniext.pprofview</id>
+    <id>com.github.spelens.pprofview</id>
     <name>Pprof Plus</name>
     <vendor email="dasaying@gmail.com" url="https://github.com/spelens-gud/pprofview-intellij-plugin">Dasaying</vendor>
 
@@ -21,7 +21,7 @@
         
         <toolWindow id="pprof Output"
                     anchor="bottom"
-                    icon="AllIcons.Toolwindows.ToolWindowRun"
+                    icon="com.github.spelens.pprofview.PprofIcons.ToolWindow"
                     factoryClass="com.github.spelens.pprofview.toolWindow.PprofOutputToolWindow"/>
     </extensions>
 
