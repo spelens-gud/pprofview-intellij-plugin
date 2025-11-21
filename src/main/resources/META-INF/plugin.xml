@@ -1,38 +1,33 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.anniext.pprofview</id>
-    <name>pprofview</name>
-    <vendor>anniext</vendor>
+    <name>Pprof Plus</name>
+    <vendor email="dasaying@gmail.com" url="https://github.com/spelens-gud/pprofview-intellij-plugin">Dasaying</vendor>
+
+    <!-- Plugin description will be extracted from README.md -->
+
+    <!-- Specify IDE compatibility -->
+    <idea-version since-build="252"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends config-file="go-support.xml">org.jetbrains.plugins.go</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+    <resource-bundle>messages.PprofViewBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- 插件启动活动 -->
-        <postStartupActivity implementation="com.github.anniext.pprofview.startup.PluginStartupActivity"/>
+        <postStartupActivity implementation="com.github.spelens.pprofview.startup.PluginStartupActivity"/>
+
+        <notificationGroup id="pprofview.notifications" displayType="BALLOON" bundle="messages.PprofViewBundle" key="notification.group.pprofview.notifications"/>
         
-        <!-- 项目级服务 -->
-        <projectService serviceImplementation="com.github.anniext.pprofview.services.PprofVisualizationService"/>
-        <projectService serviceImplementation="com.github.anniext.pprofview.services.PprofCodeNavigationService"/>
-        
-        <!-- 通知组 -->
-        <notificationGroup id="pprofview.notifications" displayType="BALLOON"/>
-        
-        <!-- 工具窗口 -->
         <toolWindow id="pprof Output"
                     anchor="bottom"
                     icon="AllIcons.Toolwindows.ToolWindowRun"
-                    factoryClass="com.github.anniext.pprofview.toolWindow.PprofOutputToolWindow"/>
+                    factoryClass="com.github.spelens.pprofview.toolWindow.PprofOutputToolWindow"/>
     </extensions>
 
     <actions>
-        <!-- pprof 文件可视化操作 -->
         <action id="pprofview.VisualizeAction"
-                class="com.github.anniext.pprofview.actions.PprofVisualizeAction"
-                text="使用 go tool pprof 可视化"
-                description="使用 go tool pprof 对性能数据进行可视化分析"
+                class="com.github.spelens.pprofview.actions.PprofVisualizeAction"
                 icon="AllIcons.Actions.Profile">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="RevealIn"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>

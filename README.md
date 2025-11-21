@@ -1,143 +1,195 @@
-# pprofview
-
-![Build](https://github.com/Anniext/pprofview/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+# Pprof Plus
 
 <!-- Plugin description -->
-一个用于在 JetBrains IDE 中可视化 pprof 性能分析数据的插件。
+A powerful performance analysis plugin for Go developers. Pprof Plus seamlessly integrates `go tool pprof` into GoLand and IntelliJ IDEA, providing comprehensive visualization and analysis capabilities for Go performance profiling.
 
-支持解析和展示 Go 语言 pprof 格式的性能分析文件,包括 CPU、内存、goroutine 等性能数据的可视化展示。
-
-主要功能:
-- 解析 pprof 格式文件 (protobuf 和文本格式)
-- 火焰图可视化展示
-- 调用图展示
-- 性能数据统计分析
-- 支持多种性能分析类型 (CPU、Heap、Goroutine 等)
-- Pprof 运行配置，支持文件、目录、软件包三种运行方式
-- 提供完整的 pprof 使用示例代码
+**Key Features:**
+- 🎯 Smart run configurations with multiple collection modes (Runtime, HTTP, Manual, Instrumentation)
+- 📊 7 visualization types including interactive web UI, flame graphs, and call graphs
+- 🔍 Code navigation with inlay hints and heatmap visualization
+- 🛠️ Integrated tool windows for real-time performance analysis
+- 🚀 One-click profiling for CPU, Memory, Goroutine, Block, and Mutex analysis
 <!-- Plugin description end -->
 
-## 安装
+English | [简体中文](README.md)
 
-- 使用 IDE 内置插件系统:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>搜索 "pprofview"</kbd> >
-  <kbd>Install</kbd>
-  
-- 手动安装:
+## ✨ Key Features
 
-  从 [最新版本](https://github.com/Anniext/pprofview/releases/latest) 下载插件并手动安装:
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+### 🎯 Run Configuration
+- **Smart Run Configuration**: Supports file, directory, and package run modes
+- **Responsive Auto-fill**: Automatically fills configuration options based on project structure
+- **Multiple Collection Modes**:
+  - Runtime Sampling
+  - HTTP Server
+  - Manual Collection
+  - Compile-time Instrumentation
+- **Multiple Profile Types**: CPU, Heap, Goroutine, Block, Mutex, Allocs
+- **Flexible Configuration**: Working directory, program arguments, environment variables, Go build flags
 
-## 使用
+### 📊 Visualization
+- **7 Visualization Types**:
+  - 🌐 Web Browser (Interactive UI)
+  - 📝 Text Report
+  - 📋 Function List
+  - ℹ️ Brief Info
+- **Context Menu Integration**: Visualize pprof files directly from context menu
+- **Auto-open**: Automatically opens visualization results after run configuration completes
+- **Real-time Notifications**: Instant feedback on operation status
 
-详细使用指南请参考：
-- [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md) - **pprof 可视化功能指南（新）**
-- [RUN_CONFIGURATION_GUIDE.md](RUN_CONFIGURATION_GUIDE.md) - Pprof 运行配置指南
-- [USAGE.md](USAGE.md) - 完整使用指南
-- [RUNTIME_SAMPLING_GUIDE.md](RUNTIME_SAMPLING_GUIDE.md) - 运行时采样指南
+### 🔍 Code Navigation
+- **Inlay Hints**: Display flat and cum data at the end of code lines
+- **Heatmap**: Treemap visualization of Top 20 functions' performance distribution
+- **Smart Jump**: Jump directly from charts to source code
+- **Color Coding**: Automatically selects colors based on hotspot intensity
 
-### 创建 Pprof 运行配置
+### 🛠️ Tool Windows
+- **pprof Output**: Displays text output results
+- **Integrated Terminal**: View detailed performance analysis data
 
-1. Run > Edit Configurations...
-2. 点击 "+" > "Pprof"
-3. 配置运行种类（支持智能填充）：
-   - **文件**：自动查找 main.go 或包含 main 函数的文件
-   - **目录**：自动使用工作目录
-   - **软件包**：自动读取 go.mod 并列出所有可用的包
-4. 配置 pprof 选项：
-   - 选择采集模式（运行时采样、HTTP 服务等）
-   - 勾选需要的分析类型（CPU、堆内存、协程等）
-   - 设置输出目录
-5. 运行程序，查看生成的 pprof 文件
+## 📦 Installation
 
-**智能功能**：
-- 切换运行种类时自动更新可用选项
-- 更改工作目录时自动重新扫描
-- 所有自动填充的值都可以手动修改
+### From JetBrains Marketplace
+1. Open GoLand/IntelliJ IDEA
+2. Go to `Settings/Preferences` → `Plugins` → `Marketplace`
+3. Search for "pprofview"
+4. Click `Install`
 
-### 可视化 pprof 文件
+### Manual Installation
+1. Download the latest release from [Releases](https://github.com/spelens-gud/pprofview-intellij-plugin/releases)
+2. Go to `Settings/Preferences` → `Plugins` → `⚙️` → `Install Plugin from Disk...`
+3. Select the downloaded ZIP file
 
-**方式一：使用 go tool pprof（推荐）**
+## 🚀 Quick Start
 
-右键点击 `.pprof` 文件，选择 **"使用 go tool pprof 可视化"**，支持多种可视化方式：
+### 1. Create Run Configuration
+1. Click `Run` → `Edit Configurations...`
+2. Click `+` → `pprof`
+3. Configure run parameters:
+   - Select run kind (File/Directory/Package)
+   - Select collection mode
+   - Select profile type
+   - Configure sampling parameters
 
-- **Web 浏览器**：交互式可视化界面（火焰图、调用图、源码视图）
-- **文本报告**：快速查看热点函数
-- **调用图 SVG**：生成调用关系图
-- **火焰图 SVG**：生成火焰图
-- **Top 函数**：显示资源消耗最多的函数
-- **函数列表**：完整的函数统计信息
+### 2. Run Performance Analysis
+1. Click the run button
+2. Wait for program execution and data collection
+3. Visualization results open automatically
 
-详细说明请参考：[visualization_example.md](src/main/resources/examples/visualization_example.md)
+### 3. Visualization Analysis
+- **Context Menu**: Right-click on pprof file in project view or editor → `Visualize with go tool pprof`
+- **Select Visualization Type**: Web, Text, Call Graph, Flame Graph, etc.
+- **View Results**: View in browser or tool window
 
-**方式二：查看 pprof 文件
+### 4. Code Navigation
+- Click on function name in chart
+- Automatically jump to source code
+- View inlay hints with performance data
 
-1. 在项目中右键点击 pprof 文件 (`.pb.gz`, `.pprof` 等格式)
-2. 选择 "Open with pprofview" 打开可视化界面
-3. 查看火焰图、调用图等性能分析数据
+## 📖 Usage Examples
 
-### 使用 pprof 性能分析
+### Runtime Sampling Mode
+```go
+package main
 
-插件提供了示例代码，展示如何在 Go 程序中使用 pprof 进行性能分析。
+import (
+    "fmt"
+    "runtime/pprof"
+    "os"
+)
 
-#### 示例代码
+func main() {
+    // CPU profiling
+    f, _ := os.Create("cpu.pprof")
+    pprof.StartCPUProfile(f)
+    defer pprof.StopCPUProfile()
+    
+    // Your code here
+    fibonacci(40)
+}
 
-参考 `src/main/resources/examples/pprof_example.go`，其中包含了多种 pprof 使用方式：
+func fibonacci(n int) int {
+    if n <= 1 {
+        return n
+    }
+    return fibonacci(n-1) + fibonacci(n-2)
+}
+```
 
-**1. HTTP 服务模式**
-- 启动 pprof HTTP 服务器，提供实时性能数据访问
-- 适用场景：长期运行的服务、实时监控
-- 访问地址：`http://localhost:6060/debug/pprof/`
+### HTTP Server Mode
+```go
+package main
 
-**2. 运行时采样模式**
-- 程序运行时自动采样性能数据
-- 适用场景：CPU、内存、协程等常规性能分析
-- 参考示例：`src/main/resources/examples/runtime_sampling_example.go`
+import (
+    _ "net/http/pprof"
+    "net/http"
+)
 
-**3. 手动采集模式**
-- 在代码中手动调用 pprof API 控制采集
-- 适用场景：需要精确控制采集时机和范围
+func main() {
+    go func() {
+        http.ListenAndServe("localhost:6060", nil)
+    }()
+    
+    // Your application code
+}
+```
 
-**4. 编译时插桩模式**
-- 使用编译参数如 `-race`（竞态检测）或 `-cover`（代码覆盖率）
+## 🎨 Feature Highlights
 
-#### 性能分析类型
+### Inlay Hints
+- Display flat and cum data at the end of code lines
+- Use different colors based on hotspot intensity
+- Support for light and dark themes
 
-- **CPU 分析**：分析 CPU 使用情况，找出热点函数
-- **堆内存分析**：分析内存分配情况，发现内存泄漏
-- **协程分析**：查看所有协程的状态和调用栈
-- **阻塞分析**：分析阻塞操作（channel、锁等）
-- **互斥锁分析**：分析锁竞争情况
-- **内存分配分析**：分析所有内存分配（包括已释放的）
+### Heatmap
+- Rectangle area represents performance ratio
+- Color intensity represents hotspot level
+- Display Top 20 functions
+- Hover to show detailed information
+- Click to jump to code
 
-#### 快速开始
+## 🔧 Requirements
 
-1. 复制示例代码到你的项目
-2. 根据需要选择合适的采集模式
-3. 运行程序生成 pprof 文件
-4. 使用插件打开和分析 pprof 文件
+- **IDE**: GoLand 2025.2+ or IntelliJ IDEA 2025.2+ (with Go plugin)
+- **Go**: 1.16+
+- **JVM**: 21+
+- **OS**: Windows, macOS, Linux
 
-## 开发
+## 📝 Development
 
-本项目基于 [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template) 构建。
-
-### 构建
-
+### Build Plugin
 ```bash
 ./gradlew buildPlugin
 ```
 
-### 运行
+### Run Tests
+```bash
+./gradlew test
+```
 
+### Run IDE
 ```bash
 ./gradlew runIde
 ```
 
-### 测试
+## 🤝 Contributing
 
-```bash
-./gradlew test
-```
+Contributions are welcome! Please check the [Contributing Guide](CONTRIBUTING.md).
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/spelens-gud/pprofview-intellij-plugin)
+- [Issue Tracker](https://github.com/spelens-gud/pprofview-intellij-plugin/issues)
+- [Changelog](CHANGELOG.md)
+- [Go pprof Documentation](https://pkg.go.dev/runtime/pprof)
+
+## 📧 Contact
+
+For questions or suggestions, please contact us through [GitHub Issues](https://github.com/spelens-gud/pprofview-intellij-plugin/issues).
+
+---
+
+**Made with ❤️ for Go developers**
