@@ -4,17 +4,17 @@ import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
 /**
- * Pprof Plus 插件图标
+ * Pprof Plus Plugin icon
  */
 object PprofIcons {
     /**
-     * 插件主图标（64x64）
+     * Main plugin icon（64x64）
      */
     @JvmField
     val PluginIcon: Icon = IconLoader.getIcon("/META-INF/pluginIcon.svg", PprofIcons::class.java)
     
     /**
-     * 工具窗口图标（13x13）
+     * Tool window icon（13x13）
      */
     @JvmField
     val ToolWindow: Icon = IconLoader.getIcon("/icons/toolWindow.svg", PprofIcons::class.java)

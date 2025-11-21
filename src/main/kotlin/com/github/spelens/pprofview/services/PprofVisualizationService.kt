@@ -31,12 +31,12 @@ class PprofVisualizationService(private val project: Project) {
     private val logger = thisLogger()
     
     /**
-     * 可视化 pprof 文件
+     * Visualize pprof file
      */
     fun visualize(file: VirtualFile, type: VisualizationType) {
-        logger.info("开始可视化文件: ${file.path}, 类型: ${type.name}")
+        logger.info(PprofViewBundle.message("pprof.viz.startingFile", file.path, type.name))
         
-        // 检查是否是 trace 文件
+        // Check if it's a trace file
         if (file.name.endsWith(".out") || file.name.contains("trace")) {
             visualizeTrace(file)
             return
@@ -54,12 +54,12 @@ class PprofVisualizationService(private val project: Project) {
     }
     
     /**
-     * 可视化 trace 文件
+     * Visualize trace file
      */
     private fun visualizeTrace(file: VirtualFile) {
-        logger.info("显示 trace 信息: ${file.path}")
+        logger.info(PprofViewBundle.message("pprof.viz.showingTrace", file.path))
         
-        // 获取文件信息
+        // Get file information
         val fileSize = File(file.path).length()
         val fileSizeStr = when {
             fileSize > 1024 * 1024 -> String.format("%.2f MB", fileSize / (1024.0 * 1024.0))
@@ -67,21 +67,21 @@ class PprofVisualizationService(private val project: Project) {
             else -> "$fileSize bytes"
         }
         
-        // 构建输出内容
+        // Build output content
         val output = buildTraceOutput(file, fileSizeStr)
         
-        // 在工具窗口中显示
-        showOutputInToolWindow("Trace - 执行追踪", output)
+        // Show in tool window
+        showOutputInToolWindow(PprofViewBundle.message("pprof.trace.title"), output)
         
-        // 同时启动 web 服务器
+        // Start web server
         startTraceWebServer(file)
     }
     
     /**
-     * 启动 trace web 服务器
+     * Start trace web server
      */
     private fun startTraceWebServer(file: VirtualFile) {
-        logger.info("启动 trace web 服务器: ${file.path}")
+        logger.info(PprofViewBundle.message("pprof.viz.startingTraceServer", file.path))
         
         val commandLine = GeneralCommandLine()
         commandLine.exePath = "go"
@@ -95,17 +95,17 @@ class PprofVisualizationService(private val project: Project) {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     val text = event.text
                     if (outputType == ProcessOutputTypes.STDOUT || outputType == ProcessOutputTypes.STDERR) {
-                        // 匹配 "Serving web UI on http://localhost:xxxxx"
+                        // Match "Serving web UI on http://localhost:xxxxx"
                         val pattern = Pattern.compile("http://[^\\s]+")
                         val matcher = pattern.matcher(text)
                         if (matcher.find()) {
                             val url = matcher.group()
-                            logger.info("检测到 trace web 服务地址: $url")
+                            logger.info(PprofViewBundle.message("pprof.viz.traceAddressDetected", url))
                             openInBrowser(url)
                             
                             showNotification(
-                                "Trace 可视化已启动",
-                                "浏览器将自动打开 $url\n关闭浏览器后，进程会自动停止",
+                                PprofViewBundle.message("pprof.trace.started"),
+                                PprofViewBundle.message("pprof.visualization.browserWillOpen", url),
                                 NotificationType.INFORMATION
                             )
                         }
@@ -113,90 +113,90 @@ class PprofVisualizationService(private val project: Project) {
                 }
                 
                 override fun processTerminated(event: ProcessEvent) {
-                    logger.info("trace web 服务已停止")
+                    logger.info(PprofViewBundle.message("pprof.viz.traceStopped"))
                     
-                    // 进程停止时，清除代码高亮
+                    // Clear code highlights when process stops
                     val navigationService = PprofCodeNavigationService.getInstance(project)
                     navigationService.clearHighlights()
-                    logger.info("已清除代码高亮（trace 进程终止触发）")
+                    logger.info(PprofViewBundle.message("pprof.viz.highlightsClearedTrace"))
                 }
             })
             
             processHandler.startNotify()
         } catch (e: Exception) {
-            logger.error("启动 trace web 服务失败", e)
+            logger.error(PprofViewBundle.message("pprof.viz.traceStartFailed"), e)
             showNotification(
-                "启动失败",
-                "无法启动 trace web 服务: ${e.message}\n请确保已安装 Go 工具链",
+                PprofViewBundle.message("pprof.visualization.startFailed"),
+                PprofViewBundle.message("pprof.viz.traceStartError", e.message ?: ""),
                 NotificationType.ERROR
             )
         }
     }
     
     /**
-     * 构建 trace 输出内容
+     * Build trace output content
      */
     private fun buildTraceOutput(file: VirtualFile, fileSize: String): String {
         val sb = StringBuilder()
         sb.appendLine("=" .repeat(80))
-        sb.appendLine("执行追踪分析报告")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.reportTitle"))
         sb.appendLine("=" .repeat(80))
         sb.appendLine()
-        sb.appendLine("文件: ${file.name}")
-        sb.appendLine("路径: ${file.path}")
-        sb.appendLine("大小: $fileSize")
+        sb.appendLine("${PprofViewBundle.message("pprof.viz.file")}: ${file.name}")
+        sb.appendLine("${PprofViewBundle.message("pprof.viz.path")}: ${file.path}")
+        sb.appendLine("${PprofViewBundle.message("pprof.viz.size")}: $fileSize")
         sb.appendLine()
         sb.appendLine("-" .repeat(80))
-        sb.appendLine("关于执行追踪")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.aboutTrace"))
         sb.appendLine("-" .repeat(80))
         sb.appendLine()
-        sb.appendLine("执行追踪（Execution Trace）记录了程序运行期间的详细事件信息，包括：")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.traceDescription"))
         sb.appendLine()
-        sb.appendLine("  • Goroutine 的创建、阻塞、唤醒和销毁")
-        sb.appendLine("  • 系统调用的进入和退出")
-        sb.appendLine("  • GC 事件")
-        sb.appendLine("  • 处理器的启动和停止")
-        sb.appendLine("  • 网络阻塞事件")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.goroutineEvents"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.syscallEvents"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.gcEvents"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.processorEvents"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.networkEvents"))
         sb.appendLine()
         sb.appendLine("-" .repeat(80))
-        sb.appendLine("查看可视化")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.viewVisualization"))
         sb.appendLine("-" .repeat(80))
         sb.appendLine()
-        sb.appendLine("✓ 交互式 Web 界面已自动启动")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.webStarted"))
         sb.appendLine()
-        sb.appendLine("如果浏览器没有自动打开，请手动在终端运行：")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.manualCommand"))
         sb.appendLine("  go tool trace ${file.path}")
         sb.appendLine()
-        sb.appendLine("Web 界面提供以下视图：")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.webViews"))
         sb.appendLine()
-        sb.appendLine("  • View trace - 时间线视图，显示所有事件")
-        sb.appendLine("  • Goroutine analysis - 分析 goroutine 的执行情况")
-        sb.appendLine("  • Network blocking profile - 网络阻塞分析")
-        sb.appendLine("  • Synchronization blocking profile - 同步阻塞分析")
-        sb.appendLine("  • Syscall blocking profile - 系统调用阻塞分析")
-        sb.appendLine("  • Scheduler latency profile - 调度延迟分析")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.viewTrace"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.goroutineAnalysis"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.networkBlocking"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.syncBlocking"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.syscallBlocking"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.schedulerLatency"))
         sb.appendLine()
         sb.appendLine("-" .repeat(80))
-        sb.appendLine("使用提示")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.usageTips"))
         sb.appendLine("-" .repeat(80))
         sb.appendLine()
-        sb.appendLine("1. 在时间线视图中，可以使用 WASD 键或鼠标拖动来导航")
-        sb.appendLine("2. 点击事件可以查看详细信息")
-        sb.appendLine("3. 使用搜索功能快速定位特定的 goroutine 或事件")
-        sb.appendLine("4. 关注长时间阻塞的 goroutine，这些可能是性能瓶颈")
+        sb.appendLine(PprofViewBundle.message("pprof.viz.tip1"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.tip2"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.tip3"))
+        sb.appendLine(PprofViewBundle.message("pprof.viz.tip4"))
         sb.appendLine()
         
         return sb.toString()
     }
     
     /**
-     * 从文件名中提取报告类型
-     * 例如: cpu.pprof -> CPU, goroutine.pprof -> Goroutine
+     * Extract report type from the file name
+     * For example: cpu.pprof -> CPU, goroutine.pprof -> Goroutine
      */
     private fun extractReportType(file: VirtualFile): String {
         val fileName = file.nameWithoutExtension
         
-        // 常见的 pprof 类型
+        // Common pprof types
         return when {
             fileName.contains("cpu", ignoreCase = true) -> "CPU"
             fileName.contains("goroutine", ignoreCase = true) -> "Goroutine"
@@ -212,7 +212,7 @@ class PprofVisualizationService(private val project: Project) {
     }
     
     /**
-     * 在浏览器中打开交互式可视化
+     * Open interactive visualization in browser
      */
     private fun visualizeInBrowser(file: VirtualFile) {
         val commandLine = GeneralCommandLine()
@@ -227,17 +227,17 @@ class PprofVisualizationService(private val project: Project) {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     val text = event.text
                     if (outputType == ProcessOutputTypes.STDOUT || outputType == ProcessOutputTypes.STDERR) {
-                        // 匹配 "Serving web UI on http://localhost:xxxxx"
+                        // Match "Serving web UI on http://localhost:xxxxx"
                         val pattern = Pattern.compile("http://[^\\s]+")
                         val matcher = pattern.matcher(text)
                         if (matcher.find()) {
                             val url = matcher.group()
-                            logger.info("检测到 pprof web 服务地址: $url")
+                            logger.info(PprofViewBundle.message("pprof.viz.pprofAddressDetected", url))
                             openInBrowser(url)
                             
                             showNotification(
-                                "pprof 可视化已启动",
-                                "浏览器将自动打开 $url\n关闭浏览器后，进程会自动停止",
+                                PprofViewBundle.message("pprof.visualization.started"),
+                                PprofViewBundle.message("pprof.visualization.browserWillOpen", url),
                                 NotificationType.INFORMATION
                             )
                         }
@@ -245,34 +245,34 @@ class PprofVisualizationService(private val project: Project) {
                 }
                 
                 override fun processTerminated(event: ProcessEvent) {
-                    logger.info("pprof web 服务已停止")
+                    logger.info(PprofViewBundle.message("pprof.viz.pprofStopped"))
                     
-                    // 进程停止时，清除代码高亮
+                    // Clear code highlights when process stops
                     val navigationService = PprofCodeNavigationService.getInstance(project)
                     navigationService.clearHighlights()
-                    logger.info("已清除代码高亮（pprof 进程终止触发）")
+                    logger.info(PprofViewBundle.message("pprof.viz.highlightsClearedPprof"))
                 }
             })
             
             processHandler.startNotify()
             
             showNotification(
-                "正在启动 pprof Web 服务",
-                "请稍候，浏览器将自动打开...",
+                PprofViewBundle.message("pprof.visualization.starting"),
+                PprofViewBundle.message("pprof.visualization.pleaseWait"),
                 NotificationType.INFORMATION
             )
         } catch (e: Exception) {
-            logger.error("启动 pprof web 服务失败", e)
+            logger.error(PprofViewBundle.message("pprof.viz.pprofStartFailed"), e)
             showNotification(
-                "启动失败",
-                "无法启动 pprof web 服务: ${e.message}\n请确保已安装 Go 工具链",
+                PprofViewBundle.message("pprof.visualization.startFailed"),
+                PprofViewBundle.message("pprof.viz.pprofStartError", e.message ?: ""),
                 NotificationType.ERROR
             )
         }
     }
     
     /**
-     * 显示文本格式报告
+     * Display text format report
      */
     private fun visualizeAsText(file: VirtualFile) {
         val reportType = extractReportType(file)
@@ -280,7 +280,7 @@ class PprofVisualizationService(private val project: Project) {
     }
     
     /**
-     * 生成 SVG 图表
+     * Generate SVG chart
      */
     private fun generateSvg(file: VirtualFile, graphType: String) {
         val outputFile = File(file.parent.path, "${file.nameWithoutExtension}_$graphType.svg")
@@ -294,38 +294,38 @@ class PprofVisualizationService(private val project: Project) {
             val exitCode = process.waitFor()
             
             if (exitCode == 0 && outputFile.exists()) {
-                logger.info("SVG 文件已生成: ${outputFile.absolutePath}")
+                logger.info(PprofViewBundle.message("pprof.viz.svgGenerated", outputFile.absolutePath))
                 
-                // 刷新文件系统
+                // Refresh file system
                 file.parent.refresh(false, false)
                 
-                // 在浏览器中打开
+                // Open in browser
                 openInBrowser(outputFile.toURI().toString())
                 
                 showNotification(
-                    "SVG 已生成",
-                    "文件保存在: ${outputFile.absolutePath}",
+                    PprofViewBundle.message("pprof.visualization.svgGenerated"),
+                    PprofViewBundle.message("pprof.visualization.svgSavedAt", outputFile.absolutePath),
                     NotificationType.INFORMATION
                 )
             } else {
                 showNotification(
-                    "生成失败",
-                    "无法生成 SVG 文件，退出码: $exitCode",
+                    PprofViewBundle.message("pprof.visualization.generateFailed"),
+                    PprofViewBundle.message("pprof.viz.svgGenerateFailed", exitCode),
                     NotificationType.ERROR
                 )
             }
         } catch (e: Exception) {
-            logger.error("生成 SVG 失败", e)
+            logger.error(PprofViewBundle.message("pprof.visualization.generateFailed"), e)
             showNotification(
-                "生成失败",
-                "无法生成 SVG: ${e.message}",
+                PprofViewBundle.message("pprof.visualization.generateFailed"),
+                PprofViewBundle.message("pprof.viz.svgGenerateError", e.message ?: ""),
                 NotificationType.ERROR
             )
         }
     }
     
     /**
-     * 显示 Top 函数
+     * Show Top Functions
      */
     private fun showTop(file: VirtualFile) {
         val reportType = extractReportType(file)
@@ -333,23 +333,23 @@ class PprofVisualizationService(private val project: Project) {
     }
     
     /**
-     * 显示函数列表
+     * Show function list
      */
     private fun showList(file: VirtualFile) {
         val reportType = extractReportType(file)
-        executeAndShowOutput(file, listOf("-list=."), "$reportType - 列表")
+        executeAndShowOutput(file, listOf("-list=."), "$reportType - ${PprofViewBundle.message("pprof.viz.list")}")
     }
     
     /**
-     * 显示简要信息
+     * Show brief information
      */
     private fun showPeek(file: VirtualFile) {
         val reportType = extractReportType(file)
-        executeAndShowOutput(file, listOf("-peek=."), "$reportType - 简要")
+        executeAndShowOutput(file, listOf("-peek=."), "$reportType - ${PprofViewBundle.message("pprof.viz.peek")}")
     }
     
     /**
-     * 执行命令并显示输出
+     * Execute command and show output
      */
     private fun executeAndShowOutput(file: VirtualFile, args: List<String>, title: String) {
         val commandLine = GeneralCommandLine()
@@ -359,7 +359,7 @@ class PprofVisualizationService(private val project: Project) {
         commandLine.addParameters(args)
         commandLine.addParameter(file.path)
         
-        logger.info("执行 pprof 命令: ${commandLine.commandLineString}")
+        logger.info("Executing pprof command: ${commandLine.commandLineString}")
         
         try {
             val processHandler = ProcessHandlerFactory.getInstance()
@@ -373,7 +373,7 @@ class PprofVisualizationService(private val project: Project) {
                     val text = event.text
                     output.append(text)
                     
-                    // 分别记录标准错误输出
+                    // Record stderr separately
                     if (outputType == ProcessOutputTypes.STDERR) {
                         errorOutput.append(text)
                     }
@@ -381,7 +381,7 @@ class PprofVisualizationService(private val project: Project) {
                 
                 override fun processTerminated(event: ProcessEvent) {
                     if (event.exitCode == 0) {
-                        // 在工具窗口中显示输出，传入 pprof 文件以支持代码导航
+                        // Show output in tool window, pass pprof file to support code navigation
                         showOutputInToolWindow(title, output.toString(), file)
                     } else {
                         val errorMsg = if (errorOutput.isNotEmpty()) {
@@ -390,54 +390,56 @@ class PprofVisualizationService(private val project: Project) {
                             output.toString().trim()
                         }
                         
-                        logger.error("pprof 命令执行失败，退出码: ${event.exitCode}, 错误信息: $errorMsg")
+                        logger.error("pprof command execution failed, exit code: ${event.exitCode}, error: $errorMsg")
                         
                         showNotification(
-                            "执行失败",
-                            "命令执行失败，退出码: ${event.exitCode}\n" +
-                            "命令: ${commandLine.commandLineString}\n" +
-                            if (errorMsg.isNotEmpty()) "错误: ${errorMsg.take(200)}" else "",
+                            PprofViewBundle.message("pprof.visualization.executionFailed"),
+                            PprofViewBundle.message("pprof.viz.commandFailed", 
+                                event.exitCode, 
+                                commandLine.commandLineString,
+                                if (errorMsg.isNotEmpty()) errorMsg.take(200) else ""
+                            ),
                             NotificationType.ERROR
                         )
                     }
                     
-                    // 进程停止时，清除代码高亮
+                    // Clear code highlights when process stops
                     val navigationService = PprofCodeNavigationService.getInstance(project)
                     navigationService.clearHighlights()
-                    logger.info("已清除代码高亮（pprof 命令进程终止触发）")
+                    logger.info(PprofViewBundle.message("pprof.viz.highlightsClearedCommand"))
                 }
             })
             
             processHandler.startNotify()
         } catch (e: Exception) {
-            logger.error("执行 pprof 命令失败", e)
+            logger.error("Failed to execute pprof command", e)
             showNotification(
-                "执行失败",
-                "无法执行 pprof 命令: ${e.message}",
+                PprofViewBundle.message("pprof.visualization.executionFailed"),
+                PprofViewBundle.message("pprof.viz.commandError", e.message ?: ""),
                 NotificationType.ERROR
             )
         }
     }
     
     /**
-     * 在工具窗口中显示输出
+     * Show output in tool window
      */
     private fun showOutputInToolWindow(title: String, content: String, pprofFile: VirtualFile? = null) {
         ApplicationManager.getApplication().invokeLater {
-            // 打开工具窗口
+            // Open tool window
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("pprof Output")
             toolWindow?.show {
-                // 获取输出面板并添加内容（带可视化）
+                // Get output panel and add content (with visualization)
                 val outputPanel = PprofOutputPanel.getInstance(project)
                 outputPanel?.addOutputWithVisualization(title, content, pprofFile)
             }
         }
         
-        logger.info("$title 输出:\n$content")
+        logger.info(PprofViewBundle.message("pprof.viz.outputShown", title, content))
     }
     
     /**
-     * 在浏览器中打开 URL
+     * Open URL in browser
      */
     private fun openInBrowser(url: String) {
         try {
@@ -445,12 +447,12 @@ class PprofVisualizationService(private val project: Project) {
                 Desktop.getDesktop().browse(URI(url))
             }
         } catch (e: Exception) {
-            logger.error("无法打开浏览器", e)
+            logger.error(PprofViewBundle.message("pprof.viz.browserOpenFailed"), e)
         }
     }
     
     /**
-     * 显示通知
+     * Show notifications
      */
     private fun showNotification(title: String, content: String, type: NotificationType) {
         NotificationGroupManager.getInstance()

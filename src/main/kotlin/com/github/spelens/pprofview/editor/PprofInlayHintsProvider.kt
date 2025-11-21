@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.editor
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.intellij.codeInsight.hints.*
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
@@ -8,15 +9,15 @@ import com.intellij.psi.PsiFile
 import javax.swing.JPanel
 
 /**
- * pprof 性能数据 Inlay Hints Provider
- * 在编辑器中内嵌显示性能分析数据
+ * pprof performance data Inlay Hints Provider
+ * Display performance analysis data inline in the editor
  */
 @Suppress("UnstableApiUsage")
 class PprofInlayHintsProvider : InlayHintsProvider<NoSettings> {
     
     override val key: SettingsKey<NoSettings> = SettingsKey("pprof.hints")
     
-    override val name: String = "pprof 性能数据"
+    override val name: String = PprofViewBundle.message("pprof.inlay.name")
     
     override val previewText: String? = null
     
@@ -28,7 +29,7 @@ class PprofInlayHintsProvider : InlayHintsProvider<NoSettings> {
         settings: NoSettings,
         sink: InlayHintsSink
     ): InlayHintsCollector? {
-        // 只为 Go 文件提供 hints
+        // Only provide hints for Go files
         if (file.fileType.name != "Go") return null
         
         return PprofInlayHintsCollector(editor)
@@ -42,13 +43,13 @@ class PprofInlayHintsProvider : InlayHintsProvider<NoSettings> {
 }
 
 /**
- * pprof Inlay Hints 收集器
+ * pprof Inlay Hints collector
  */
 @Suppress("UnstableApiUsage")
 class PprofInlayHintsCollector(editor: Editor) : FactoryInlayHintsCollector(editor) {
     
     override fun collect(element: com.intellij.psi.PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
-        // Hints 由 PprofCodeNavigationService 动态添加
+        // Hints are dynamically added by PprofCodeNavigationService
         return true
     }
 }

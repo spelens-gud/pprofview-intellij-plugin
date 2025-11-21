@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.runconfig
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.github.spelens.pprofview.actions.VisualizationType
 import com.github.spelens.pprofview.services.PprofVisualizationService
 import com.intellij.execution.configurations.CommandLineState
@@ -274,7 +275,7 @@ class PprofRunState(
     }
     
     /**
-     * 使用运行时采样模式启动
+     * Start with runtime sampling mode
      */
     private fun startWithRuntimeSampling(): ProcessHandler {
         val logger = thisLogger()
@@ -379,7 +380,8 @@ class PprofRunState(
                     val text = event.text
                     
                     // Detected log of pprof data save completion
-                    if (!visualizationTriggered && text.contains("[pprofview] 所有 pprof 数据已保存")) {
+                    val allDataSavedMsg = PprofViewBundle.message("pprof.runtime.allDataSaved")
+                    if (!visualizationTriggered && text.contains("[pprofview] $allDataSavedMsg")) {
                         visualizationTriggered = true
                         logger.info("Detected pprof data save completion, visualizing immediately")
                         
@@ -420,7 +422,7 @@ class PprofRunState(
     }
     
     /**
-     * 注入 pprof 初始化文件
+     * Inject pprof initialization file
      */
     private fun injectPprofInit(): File? {
         val logger = thisLogger()
@@ -463,7 +465,7 @@ class PprofRunState(
     }
     
     /**
-     * 注入 pprof HTTP 服务初始化文件
+     * Inject pprof HTTP service initialization file
      */
     private fun injectPprofHttpInit(): File? {
         val logger = thisLogger()
@@ -534,7 +536,7 @@ func init() {
     }
     
     /**
-     * 添加环境变量
+     * Add environment variable
      */
     private fun addEnvironmentVariables(commandLine: GeneralCommandLine) {
         if (configuration.environmentVariables.isNotEmpty()) {
@@ -548,7 +550,7 @@ func init() {
     }
     
     /**
-     * 添加 pprof 相关的环境变量
+     * Add pprof-related environment variables
      */
     private fun addPprofEnvironmentVariables(commandLine: GeneralCommandLine) {
         val logger = thisLogger()
@@ -617,7 +619,7 @@ func init() {
     }
     
     /**
-     * 获取输出目录
+     * Get output directory
      */
     private fun getOutputDirectory(): File {
         val dirPath = if (configuration.outputDirectory.isNotEmpty()) {
@@ -635,7 +637,7 @@ func init() {
     }
     
     /**
-     * 清除输出目录中的旧 pprof 和 trace 文件
+     * Clear old pprof and trace files from the output directory
      */
     private fun cleanOldPprofFiles(outputDir: File) {
         val logger = thisLogger()
@@ -660,7 +662,7 @@ func init() {
     }
     
     /**
-     * 自动打开可视化
+     * Automatically open visualization
      */
     private fun autoOpenVisualization(outputDir: File) {
         val logger = thisLogger()
@@ -704,14 +706,14 @@ func init() {
                         visualizationService.visualize(virtualFile, VisualizationType.TEXT)
                     }
                 } else {
-                    logger.info("跳过 ${file.name}（类型: ${profileType?.displayName ?: "未知"}，未被选中）")
+                    logger.info("skip ${file.name}（type: ${profileType?.displayName ?: "unknow"}，Not selected）")
                 }
             }
         }
     }
     
     /**
-     * 根据文件名匹配分析类型
+     * Match analysis type according to file name
      */
     private fun matchProfileType(fileName: String): PprofProfileType? {
         return PprofProfileType.entries.find { type ->
@@ -720,7 +722,7 @@ func init() {
     }
     
     /**
-     * 清除 pprof Output 窗口的数据
+     * Clear data from the pprof Output window
      */
     private fun clearPprofOutput() {
         val logger = thisLogger()

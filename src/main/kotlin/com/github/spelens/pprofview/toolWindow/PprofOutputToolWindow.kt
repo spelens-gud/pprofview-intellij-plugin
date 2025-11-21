@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.toolWindow
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.github.spelens.pprofview.parser.PprofTextParser
 import com.github.spelens.pprofview.services.PprofCodeNavigationService
 import com.github.spelens.pprofview.ui.PprofChartPanel
@@ -16,7 +17,7 @@ import javax.swing.JPanel
 import javax.swing.JTextArea
 
 /**
- * pprof 输出工具窗口
+ * pprof output tool window
  */
 class PprofOutputToolWindow : ToolWindowFactory {
     
@@ -30,34 +31,34 @@ class PprofOutputToolWindow : ToolWindowFactory {
 }
 
 /**
- * pprof 输出面板
+ * pprof output panel
  */
 class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val logger = thisLogger()
     private val tabbedPane = JBTabbedPane()
     private val outputs = mutableMapOf<String, JTextArea>()
-    // 记录每个标签页的报告类型，用于覆盖逻辑
+    // Record report type for each tab, used for override logic
     private val tabReportTypes = mutableMapOf<String, Int>() // reportType -> tabIndex
-    // 记录当前正在处理的 pprof 文件
+    // Record currently processing pprof file
     private var currentPprofFile: com.intellij.openapi.vfs.VirtualFile? = null
-    // 记录当前标签页的标题和内容，用于刷新
+    // Record tab title and content for refresh
     private val tabContents = mutableMapOf<String, Pair<String, com.intellij.openapi.vfs.VirtualFile?>>() // title -> (content, pprofFile)
     
     init {
-        // 创建工具栏
+        // Create toolbar
         val toolbar = createToolbar()
         add(toolbar, BorderLayout.NORTH)
         add(tabbedPane, BorderLayout.CENTER)
     }
     
     /**
-     * 构建刷新按钮的工具提示
+     * Build refresh button tooltip
      */
     private fun buildRefreshTooltip(): String {
         val tabCount = tabbedPane.tabCount
         
         return if (tabCount > 0) {
-            // 统计有关联文件的标签页数量
+            // Count tabs with associated files
             var withFileCount = 0
             var totalFileSize = 0L
             val fileNames = mutableSetOf<String>()
@@ -77,72 +78,80 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             
             buildString {
                 append("<html>")
-                append("<b>刷新所有标签页数据</b><br>")
-                append("<hr>")
-                append("<b>标签页总数：</b> $tabCount<br>")
-                append("<b>有关联文件：</b> $withFileCount 个<br>")
+                append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.title"))
+                append("<br><hr>")
+                append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.tabCount", tabCount))
+                append("<br>")
+                append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.withFile", withFileCount))
+                append("<br>")
                 
                 if (withFileCount > 0) {
-                    // 显示总文件大小
+                    // Show total file size
                     val totalSizeStr = when {
                         totalFileSize > 1024 * 1024 -> String.format("%.2f MB", totalFileSize / (1024.0 * 1024.0))
                         totalFileSize > 1024 -> String.format("%.2f KB", totalFileSize / 1024.0)
                         else -> "$totalFileSize bytes"
                     }
-                    append("<b>总文件大小：</b> $totalSizeStr<br>")
+                    append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.totalSize", totalSizeStr))
+                    append("<br>")
                     
-                    // 显示关联的文件列表
+                    // Show associated file list
                     if (fileNames.isNotEmpty()) {
-                        append("<b>关联文件：</b><br>")
+                        append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.files"))
+                        append("<br>")
                         fileNames.take(3).forEach { fileName ->
                             append("  • $fileName<br>")
                         }
                         if (fileNames.size > 3) {
-                            append("  • ... 还有 ${fileNames.size - 3} 个文件<br>")
+                            append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.moreFiles", fileNames.size - 3))
+                            append("<br>")
                         }
                     }
                     
                     append("<hr>")
-                    append("<i>点击将重新读取所有 pprof 文件并刷新可视化图表</i>")
+                    append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.clickToRefresh"))
                 } else {
                     append("<hr>")
-                    append("<i>点击将重新解析所有标签页的现有数据</i>")
+                    append(PprofViewBundle.message("pprof.toolWindow.refreshTooltip.clickToReparse"))
                 }
                 
                 append("</html>")
             }
         } else {
-            "<html><b>刷新所有标签页数据</b><br><hr><i>当前没有标签页</i></html>"
+            "<html>${PprofViewBundle.message("pprof.toolWindow.refreshTooltip.title")}<br><hr>${PprofViewBundle.message("pprof.toolWindow.refreshTooltip.noTabs")}</html>"
         }
     }
     
     /**
-     * 构建清除按钮的工具提示
+     * Build clear button tooltip
      */
     private fun buildClearTooltip(): String {
         val tabCount = tabbedPane.tabCount
         
         return buildString {
             append("<html>")
-            append("<b>清除所有标签页</b><br>")
-            append("<hr>")
-            append("<b>当前标签页数量：</b> $tabCount<br>")
+            append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.title"))
+            append("<br><hr>")
+            append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.count", tabCount))
+            append("<br>")
             
             if (tabCount > 0) {
-                append("<b>标签页列表：</b><br>")
+                append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.list"))
+                append("<br>")
                 for (i in 0 until minOf(tabCount, 5)) {
                     val title = tabbedPane.getTitleAt(i)
                     append("  • $title<br>")
                 }
                 if (tabCount > 5) {
-                    append("  • ... 还有 ${tabCount - 5} 个标签页<br>")
+                    append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.moreTabs", tabCount - 5))
+                    append("<br>")
                 }
                 append("<hr>")
-                append("<i>点击将清除所有 $tabCount 个标签页</i>")
+                append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.clickToClear", tabCount))
             } else {
-                append("<b>状态：</b> 无标签页<br>")
-                append("<hr>")
-                append("<i>当前没有可清除的标签页</i>")
+                append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.status"))
+                append("<br><hr>")
+                append(PprofViewBundle.message("pprof.toolWindow.clearTooltip.noTabsToClear"))
             }
             
             append("</html>")
@@ -150,13 +159,13 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
     
     /**
-     * 创建工具栏
+     * Create toolbar
      */
     private fun createToolbar(): JComponent {
         val toolbar = com.intellij.ui.components.JBPanel<com.intellij.ui.components.JBPanel<*>>()
         toolbar.layout = java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 5, 2)
         
-        // 刷新按钮
+        // Refresh button
         val refreshButton = com.intellij.ui.components.JBLabel(
             com.intellij.icons.AllIcons.Actions.Refresh
         )
@@ -168,12 +177,12 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             }
             
             override fun mouseEntered(e: java.awt.event.MouseEvent) {
-                // 动态更新工具提示，显示当前标签页信息
+                // Dynamically update tooltip to show current tab info
                 refreshButton.toolTipText = buildRefreshTooltip()
             }
         })
         
-        // 清除所有按钮
+        // Clear all button
         val clearButton = com.intellij.ui.components.JBLabel(
             com.intellij.icons.AllIcons.Actions.GC
         )
@@ -185,7 +194,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             }
             
             override fun mouseEntered(e: java.awt.event.MouseEvent) {
-                // 动态更新工具提示，显示标签页数量
+                // Dynamically update tooltip to show tab count
                 clearButton.toolTipText = buildClearTooltip()
             }
         })
@@ -198,25 +207,17 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
     
     /**
-     * 刷新所有标签页
+     * Refresh all tabs
      */
     private fun refreshCurrentTab() {
         val tabCount = tabbedPane.tabCount
         
-        if (tabCount == 0) {
-            logger.warn("没有标签页")
-            showNotification("刷新失败", "当前没有标签页", com.intellij.notification.NotificationType.WARNING)
-            return
-        }
-        
-        logger.info("开始刷新所有标签页，共 $tabCount 个")
-        
-        // 刷新标签时，清除代码高亮
+        // Clear code highlights when refreshing tabs
         val navigationService = PprofCodeNavigationService.getInstance(project)
         navigationService.clearHighlights()
-        logger.info("已清除代码高亮（刷新标签触发）")
+        logger.info(PprofViewBundle.message("pprof.toolWindow.highlightsCleared"))
         
-        // 收集所有需要刷新的标签页信息
+        // Collect all tab information to refresh
         val tabsToRefresh = mutableListOf<Triple<String, String, com.intellij.openapi.vfs.VirtualFile?>>()
         
         for (i in 0 until tabCount) {
@@ -230,30 +231,34 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         }
         
         if (tabsToRefresh.isEmpty()) {
-            logger.warn("没有可刷新的标签页数据")
-            showNotification("刷新失败", "没有可刷新的标签页数据", com.intellij.notification.NotificationType.WARNING)
+            logger.warn(PprofViewBundle.message("pprof.toolWindow.noTabsToRefresh"))
+            showNotification(
+                PprofViewBundle.message("pprof.toolWindow.refreshFailed"), 
+                PprofViewBundle.message("pprof.toolWindow.noDataToRefresh"), 
+                com.intellij.notification.NotificationType.WARNING
+            )
             return
         }
         
-        // 记录当前选中的标签页索引
+        // Record currently selected tab index
         val selectedIndex = tabbedPane.selectedIndex
         
-        // 刷新所有标签页
+        // Refresh all tabs
         var refreshedCount = 0
         var failedCount = 0
         
         tabsToRefresh.forEach { (title, content, pprofFile) ->
             try {
-                logger.info("刷新标签页: $title")
+                logger.info(PprofViewBundle.message("pprof.toolWindow.refreshingTab", title))
                 
-                // 如果有 pprof 文件，重新读取文件内容
+                // If has pprof file, re-read file content
                 if (pprofFile != null && pprofFile.exists()) {
-                    logger.info("重新读取 pprof 文件: ${pprofFile.path}")
+                    logger.info(PprofViewBundle.message("pprof.toolWindow.rereadingFile", pprofFile.path))
                     
-                    // 刷新虚拟文件系统
+                    // Refresh virtual file system
                     pprofFile.refresh(false, false)
                     
-                    // 重新执行 pprof 命令获取最新数据（异步）
+                    // Re-execute pprof command to get latest data (async)
                     refreshPprofDataAsync(title, pprofFile) { success ->
                         if (success) {
                             refreshedCount++
@@ -261,42 +266,42 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
                             failedCount++
                         }
                         
-                        // 检查是否所有标签页都已刷新完成
+                        // Check if all tabs have been refreshed
                         if (refreshedCount + failedCount == tabsToRefresh.size) {
                             showRefreshCompleteNotification(refreshedCount, failedCount)
                         }
                     }
                 } else {
-                    // 没有 pprof 文件，只刷新现有内容
+                    // No pprof file, just refresh existing content
                     removeExistingTab(title)
                     addOutputWithVisualization(title, content, pprofFile)
                     refreshedCount++
                 }
             } catch (e: Exception) {
-                logger.error("刷新标签页失败: $title", e)
+                logger.error(PprofViewBundle.message("pprof.toolWindow.refreshTabFailed", title), e)
                 failedCount++
             }
         }
         
-        // 如果没有异步刷新任务，直接显示完成通知
+        // If no async refresh tasks, show completion notification directly
         if (tabsToRefresh.none { it.third != null && it.third!!.exists() }) {
             showRefreshCompleteNotification(refreshedCount, failedCount)
         }
         
-        // 恢复选中的标签页
+        // Restore selected tab
         if (selectedIndex >= 0 && selectedIndex < tabbedPane.tabCount) {
             tabbedPane.selectedIndex = selectedIndex
         }
     }
     
     /**
-     * 显示刷新完成通知
+     * Show refresh complete notification
      */
     private fun showRefreshCompleteNotification(successCount: Int, failedCount: Int) {
         val message = buildString {
-            append("成功刷新 $successCount 个标签页")
+            append(PprofViewBundle.message("pprof.toolWindow.refreshSuccess", successCount))
             if (failedCount > 0) {
-                append("，失败 $failedCount 个")
+                append(PprofViewBundle.message("pprof.toolWindow.refreshWithFailures", failedCount))
             }
         }
         
@@ -306,23 +311,25 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             com.intellij.notification.NotificationType.INFORMATION
         }
         
-        showNotification("刷新完成", message, type)
-        logger.info("刷新完成: 成功 $successCount 个，失败 $failedCount 个")
+        showNotification(PprofViewBundle.message("pprof.toolWindow.refreshComplete"), message, type)
+        logger.info("Refresh complete: success $successCount, failed $failedCount")
     }
     
     /**
-     * 异步重新执行 pprof 命令获取最新数据
+     * Asynchronously re-execute pprof command to get latest data
      */
     private fun refreshPprofDataAsync(
         title: String,
         pprofFile: com.intellij.openapi.vfs.VirtualFile,
         callback: (Boolean) -> Unit
     ) {
-        // 根据标题判断报告类型
+        // Determine report type based on title
+        val listMsg = PprofViewBundle.message("pprof.toolWindow.list")
+        val peekMsg = PprofViewBundle.message("pprof.toolWindow.peek")
         val args = when {
             title.contains("Top") -> listOf("-top")
-            title.contains("列表") -> listOf("-list=.")
-            title.contains("简要") -> listOf("-peek=.")
+            title.contains(listMsg) -> listOf("-list=.")
+            title.contains(peekMsg) -> listOf("-peek=.")
             else -> listOf("-text")
         }
         
@@ -333,7 +340,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         commandLine.addParameters(args)
         commandLine.addParameter(pprofFile.path)
         
-        logger.info("执行刷新命令: ${commandLine.commandLineString}")
+        logger.info(PprofViewBundle.message("pprof.toolWindow.executingRefreshCommand", commandLine.commandLineString))
         
         try {
             val processHandler = com.intellij.execution.process.ProcessHandlerFactory.getInstance()
@@ -348,20 +355,20 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
                 
                 override fun processTerminated(event: com.intellij.execution.process.ProcessEvent) {
                     if (event.exitCode == 0) {
-                        // 更新标签页内容
+                        // Update tab content
                         com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
                             try {
                                 removeExistingTab(title)
                                 addOutputWithVisualization(title, output.toString(), pprofFile)
                                 callback(true)
-                                logger.info("标签页刷新成功: $title")
+                                logger.info(PprofViewBundle.message("pprof.toolWindow.tabRefreshSuccess", title))
                             } catch (e: Exception) {
-                                logger.error("更新标签页失败: $title", e)
+                                logger.error(PprofViewBundle.message("pprof.toolWindow.updateTabFailed", title), e)
                                 callback(false)
                             }
                         }
                     } else {
-                        logger.error("刷新命令执行失败，退出码: ${event.exitCode}")
+                        logger.error(PprofViewBundle.message("pprof.toolWindow.refreshCommandFailed", event.exitCode))
                         callback(false)
                     }
                 }
@@ -369,13 +376,13 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             
             processHandler.startNotify()
         } catch (e: Exception) {
-            logger.error("执行刷新命令失败", e)
+            logger.error(PprofViewBundle.message("pprof.toolWindow.refreshCommandError"), e)
             callback(false)
         }
     }
     
     /**
-     * 显示通知
+     * Show notification
      */
     private fun showNotification(title: String, content: String, type: com.intellij.notification.NotificationType) {
         com.intellij.notification.NotificationGroupManager.getInstance()
@@ -385,10 +392,10 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
     
     /**
-     * 添加输出标签页（文本）
+     * Add output tab (text)
      */
     fun addOutput(title: String, content: String) {
-        // 检查是否已存在同类型的标签页，如果存在则覆盖
+        // Check if tab of same type already exists, override if so
         removeExistingTab(title)
         
         val textArea = JTextArea(content)
@@ -405,27 +412,27 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
     
     /**
-     * 添加输出标签页（带可视化）
+     * Add output tab (with visualization)
      */
     fun addOutputWithVisualization(title: String, content: String, pprofFile: com.intellij.openapi.vfs.VirtualFile? = null) {
         try {
-            // 记录当前的 pprof 文件
+            // Record current pprof file
             if (pprofFile != null) {
                 currentPprofFile = pprofFile
             }
             
-            // 保存标签页内容，用于刷新
+            // Save tab content for refresh
             tabContents[title] = Pair(content, pprofFile)
             
-            // 检查是否已存在同类型的标签页，如果存在则覆盖
+            // Check if tab of same type already exists, override if so
             removeExistingTab(title)
             
-            // 解析文本报告
+            // Parse text report
             val parser = PprofTextParser()
             val report = parser.parse(content)
             
             if (report.entries.isNotEmpty()) {
-                // 直接显示图表，传入 project 和 pprofFile 以支持代码导航
+                // Show chart directly, pass project and pprofFile to support code navigation
                 val chartPanel = PprofChartPanel(report, project, currentPprofFile)
                 
                 val tabIndex = tabbedPane.tabCount
@@ -434,31 +441,31 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
                 
                 tabReportTypes[title] = tabIndex
                 
-                logger.info("已添加可视化标签页: $title")
+                logger.info(PprofViewBundle.message("pprof.toolWindow.addedVisualizationTab", title))
             } else {
-                // 如果解析失败，只显示文本
+                // If parsing fails, show text only
                 addOutput(title, content)
             }
         } catch (e: Exception) {
-            logger.error("创建可视化失败", e)
-            // 降级到纯文本显示
+            logger.error(PprofViewBundle.message("pprof.toolWindow.visualizationFailed"), e)
+            // Fallback to plain text display
             addOutput(title, content)
         }
     }
     
     /**
-     * 移除已存在的同类型标签页
+     * Remove existing tab of same type
      */
     private fun removeExistingTab(reportType: String) {
         val existingIndex = tabReportTypes[reportType]
         if (existingIndex != null && existingIndex < tabbedPane.tabCount) {
-            // 检查标签页标题是否匹配（因为索引可能已经变化）
+            // Check if tab title matches (index may have changed)
             if (tabbedPane.getTitleAt(existingIndex) == reportType) {
-                logger.info("移除已存在的标签页: $reportType (索引: $existingIndex)")
+                logger.info(PprofViewBundle.message("pprof.toolWindow.removingExistingTab", reportType, existingIndex))
                 tabbedPane.removeTabAt(existingIndex)
                 outputs.remove(reportType)
                 
-                // 更新其他标签页的索引
+                // Update other tab indices
                 tabReportTypes.entries.forEach { entry ->
                     if (entry.value > existingIndex) {
                         tabReportTypes[entry.key] = entry.value - 1
@@ -467,14 +474,14 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             }
         }
         
-        // 如果索引不匹配，尝试通过标题查找
+        // If index doesn't match, try to find by title
         for (i in 0 until tabbedPane.tabCount) {
             if (tabbedPane.getTitleAt(i) == reportType) {
-                logger.info("通过标题查找并移除标签页: $reportType (索引: $i)")
+                logger.info(PprofViewBundle.message("pprof.toolWindow.removingByTitle", reportType, i))
                 tabbedPane.removeTabAt(i)
                 outputs.remove(reportType)
                 
-                // 更新索引
+                // Update indices
                 tabReportTypes.entries.forEach { entry ->
                     if (entry.value > i) {
                         tabReportTypes[entry.key] = entry.value - 1
@@ -484,12 +491,12 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             }
         }
         
-        // 清理映射
+        // Clean up mapping
         tabReportTypes.remove(reportType)
     }
     
     /**
-     * 添加自定义组件标签页
+     * Add custom component tab
      */
     fun addComponent(title: String, component: JComponent) {
         tabbedPane.addTab(title, component)
@@ -497,7 +504,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
     
     /**
-     * 清除所有输出
+     * Clear all output
      */
     fun clearAll() {
         tabbedPane.removeAll()
@@ -506,14 +513,14 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         tabContents.clear()
         currentPprofFile = null
         
-        // 清除所有标签时，清除代码高亮
+        // Clear code highlights when clearing all tabs
         val navigationService = PprofCodeNavigationService.getInstance(project)
         navigationService.clearHighlights()
     }
     
     companion object {
         /**
-         * 获取工具窗口实例
+         * Get tool window instance
          */
         fun getInstance(project: Project): PprofOutputPanel? {
             val toolWindow = com.intellij.openapi.wm.ToolWindowManager.getInstance(project)

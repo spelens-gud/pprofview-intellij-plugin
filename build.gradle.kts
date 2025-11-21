@@ -53,7 +53,7 @@ dependencies {
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
 intellijPlatform {
-    buildSearchableOptions = false // 禁用 buildSearchableOptions 任务以避免警告
+    buildSearchableOptions = false 
     
     pluginConfiguration {
         name = providers.gradleProperty("pluginName")
