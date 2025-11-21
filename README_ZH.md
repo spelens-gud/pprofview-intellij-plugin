@@ -1,4 +1,4 @@
-# Pprof Plus
+# Pprof Plus: Visual Analytics
 
 一个强大的 Go 性能分析插件。Pprof Plus 将 `go tool pprof` 无缝集成到 GoLand 和 IntelliJ IDEA 中，为 Go 开发者提供全面的性能分析可视化能力。
 

@@ -4,7 +4,107 @@
     <name>Pprof Plus</name>
     <vendor email="dasaying@gmail.com" url="https://github.com/spelens-gud/pprofview-intellij-plugin">Dasaying</vendor>
 
-    <!-- Plugin description will be extracted from README.md -->
+    <description><![CDATA[
+        <h2>🚀 Pprof Plus - Go Performance Analysis Made Easy</h2>
+        
+        <p>
+            A powerful performance analysis plugin that brings <code>go tool pprof</code> directly into your IDE.
+            Visualize, analyze, and optimize your Go applications without leaving GoLand or IntelliJ IDEA.
+        </p>
+        
+        <h3>✨ Key Features</h3>
+        <ul>
+            <li><strong>🎯 Smart Run Configurations</strong> - One-click profiling with multiple collection modes (Runtime, HTTP, Manual, Instrumentation)</li>
+            <li><strong>📊 Rich Visualizations</strong> - 7 visualization types including interactive web UI, flame graphs, call graphs, and more</li>
+            <li><strong>� Cocde Navigation</strong> - Jump from performance data to source code with inlay hints and heatmap visualization</li>
+            <li><strong>�️ Inetegrated Tool Windows</strong> - View analysis results directly in your IDE</li>
+            <li><strong>⚡ Multiple Profile Types</strong> - CPU, Memory, Goroutine, Block, Mutex, and Allocs profiling</li>
+        </ul>
+        
+        <h3>🎨 Highlights</h3>
+        <ul>
+            <li><strong>Inlay Hints</strong> - Display performance metrics (flat/cum) directly in your code editor</li>
+            <li><strong>Heatmap</strong> - Visual treemap of Top 20 functions with color-coded hotspots</li>
+            <li><strong>Context Menu</strong> - Right-click any pprof file to visualize instantly</li>
+            <li><strong>Auto-open Results</strong> - Visualization opens automatically after profiling completes</li>
+        </ul>
+        
+        <h3>🚀 Quick Start</h3>
+        <ol>
+            <li>Create a new <strong>pprof</strong> run configuration</li>
+            <li>Select your collection mode and profile type</li>
+            <li>Click Run and watch the magic happen</li>
+            <li>Explore interactive visualizations and jump to code</li>
+        </ol>
+        
+        <h3>📋 Requirements</h3>
+        <ul>
+            <li>GoLand 2025.2+ or IntelliJ IDEA 2025.2+ (with Go plugin)</li>
+            <li>Go 1.16+</li>
+            <li>JVM 21+</li>
+        </ul>
+        
+        <p>
+            <strong>Made with ❤️ for Go developers</strong>
+        </p>
+        
+        <p>
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin">GitHub</a> |
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin/issues">Report Issues</a> |
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin/blob/main/CHANGELOG.md">Changelog</a>
+        </p>
+    ]]></description>
+
+    <description xml:lang="zh"><![CDATA[
+        <h2>🚀 Pprof Plus - 让 Go 性能分析变得简单</h2>
+        
+        <p>
+            一款强大的性能分析插件，将 <code>go tool pprof</code> 直接集成到您的 IDE 中。
+            无需离开 GoLand 或 IntelliJ IDEA，即可可视化、分析和优化您的 Go 应用程序。
+        </p>
+        
+        <h3>✨ 核心功能</h3>
+        <ul>
+            <li><strong>🎯 智能运行配置</strong> - 一键性能分析，支持多种采集模式（运行时、HTTP、手动、插桩）</li>
+            <li><strong>📊 丰富的可视化</strong> - 7 种可视化类型，包括交互式 Web UI、火焰图、调用图等</li>
+            <li><strong>🔍 代码导航</strong> - 从性能数据直接跳转到源代码，支持内嵌提示和热力图可视化</li>
+            <li><strong>🛠️ 集成工具窗口</strong> - 直接在 IDE 中查看分析结果</li>
+            <li><strong>⚡ 多种分析类型</strong> - 支持 CPU、内存、协程、阻塞、互斥锁和内存分配分析</li>
+        </ul>
+        
+        <h3>🎨 特色亮点</h3>
+        <ul>
+            <li><strong>内嵌提示</strong> - 在代码编辑器中直接显示性能指标（flat/cum）</li>
+            <li><strong>热力图</strong> - Top 20 函数的可视化矩形树图，颜色标识热点</li>
+            <li><strong>右键菜单</strong> - 右键点击任意 pprof 文件即可立即可视化</li>
+            <li><strong>自动打开结果</strong> - 性能分析完成后自动打开可视化结果</li>
+        </ul>
+        
+        <h3>🚀 快速开始</h3>
+        <ol>
+            <li>创建一个新的 <strong>pprof</strong> 运行配置</li>
+            <li>选择采集模式和分析类型</li>
+            <li>点击运行，见证奇迹</li>
+            <li>探索交互式可视化并跳转到代码</li>
+        </ol>
+        
+        <h3>📋 系统要求</h3>
+        <ul>
+            <li>GoLand 2025.2+ 或 IntelliJ IDEA 2025.2+（需安装 Go 插件）</li>
+            <li>Go 1.16+</li>
+            <li>JVM 21+</li>
+        </ul>
+        
+        <p>
+            <strong>用 ❤️ 为 Go 开发者打造</strong>
+        </p>
+        
+        <p>
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin">GitHub</a> |
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin/issues">问题反馈</a> |
+            <a href="https://github.com/spelens-gud/pprofview-intellij-plugin/blob/main/CHANGELOG.md">更新日志</a>
+        </p>
+    ]]></description>
 
     <!-- Specify IDE compatibility -->
     <idea-version since-build="252"/>
