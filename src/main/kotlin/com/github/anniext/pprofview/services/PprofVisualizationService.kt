@@ -113,6 +113,11 @@ class PprofVisualizationService(private val project: Project) {
                 
                 override fun processTerminated(event: ProcessEvent) {
                     logger.info("trace web 服务已停止")
+                    
+                    // 进程停止时，清除代码高亮
+                    val navigationService = PprofCodeNavigationService.getInstance(project)
+                    navigationService.clearHighlights()
+                    logger.info("已清除代码高亮（trace 进程终止触发）")
                 }
             })
             
@@ -240,6 +245,11 @@ class PprofVisualizationService(private val project: Project) {
                 
                 override fun processTerminated(event: ProcessEvent) {
                     logger.info("pprof web 服务已停止")
+                    
+                    // 进程停止时，清除代码高亮
+                    val navigationService = PprofCodeNavigationService.getInstance(project)
+                    navigationService.clearHighlights()
+                    logger.info("已清除代码高亮（pprof 进程终止触发）")
                 }
             })
             
@@ -389,6 +399,11 @@ class PprofVisualizationService(private val project: Project) {
                             NotificationType.ERROR
                         )
                     }
+                    
+                    // 进程停止时，清除代码高亮
+                    val navigationService = PprofCodeNavigationService.getInstance(project)
+                    navigationService.clearHighlights()
+                    logger.info("已清除代码高亮（pprof 命令进程终止触发）")
                 }
             })
             
@@ -415,15 +430,6 @@ class PprofVisualizationService(private val project: Project) {
                 val outputPanel = PprofOutputPanel.getInstance(project)
                 outputPanel?.addOutputWithVisualization(title, content, pprofFile)
             }
-            
-            // 同时显示通知
-            val lines = content.lines().take(5)
-            val preview = lines.joinToString("\n")
-            showNotification(
-                title,
-                preview + if (content.lines().size > 5) "\n...\n查看 pprof Output 工具窗口获取完整输出和可视化图表" else "",
-                NotificationType.INFORMATION
-            )
         }
         
         logger.info("$title 输出:\n$content")

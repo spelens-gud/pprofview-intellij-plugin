@@ -1,6 +1,7 @@
 package com.github.anniext.pprofview.toolWindow
 
 import com.github.anniext.pprofview.parser.PprofTextParser
+import com.github.anniext.pprofview.services.PprofCodeNavigationService
 import com.github.anniext.pprofview.ui.PprofChartPanel
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -76,7 +77,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
             
             buildString {
                 append("<html>")
-                append("<b>🔄 刷新所有标签页数据</b><br>")
+                append("<b>刷新所有标签页数据</b><br>")
                 append("<hr>")
                 append("<b>标签页总数：</b> $tabCount<br>")
                 append("<b>有关联文件：</b> $withFileCount 个<br>")
@@ -111,7 +112,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
                 append("</html>")
             }
         } else {
-            "<html><b>🔄 刷新所有标签页数据</b><br><hr><i>当前没有标签页</i></html>"
+            "<html><b>刷新所有标签页数据</b><br><hr><i>当前没有标签页</i></html>"
         }
     }
     
@@ -123,7 +124,7 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         
         return buildString {
             append("<html>")
-            append("<b>🗑️ 清除所有标签页</b><br>")
+            append("<b>清除所有标签页</b><br>")
             append("<hr>")
             append("<b>当前标签页数量：</b> $tabCount<br>")
             
@@ -210,6 +211,11 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         
         logger.info("开始刷新所有标签页，共 $tabCount 个")
         
+        // 刷新标签时，清除代码高亮
+        val navigationService = PprofCodeNavigationService.getInstance(project)
+        navigationService.clearHighlights()
+        logger.info("已清除代码高亮（刷新标签触发）")
+        
         // 收集所有需要刷新的标签页信息
         val tabsToRefresh = mutableListOf<Triple<String, String, com.intellij.openapi.vfs.VirtualFile?>>()
         
@@ -231,13 +237,6 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         
         // 记录当前选中的标签页索引
         val selectedIndex = tabbedPane.selectedIndex
-        
-        // 显示开始刷新的通知
-        showNotification(
-            "开始刷新",
-            "正在刷新 ${tabsToRefresh.size} 个标签页...",
-            com.intellij.notification.NotificationType.INFORMATION
-        )
         
         // 刷新所有标签页
         var refreshedCount = 0
@@ -507,7 +506,11 @@ class PprofOutputPanel(private val project: Project) : JPanel(BorderLayout()) {
         tabContents.clear()
         currentPprofFile = null
         
-        logger.info("已清除所有标签页")
+        // 清除所有标签时，清除代码高亮
+        val navigationService = PprofCodeNavigationService.getInstance(project)
+        navigationService.clearHighlights()
+        
+        logger.info("已清除所有标签页和代码高亮")
         showNotification("清除完成", "已清除所有标签页", com.intellij.notification.NotificationType.INFORMATION)
     }
     

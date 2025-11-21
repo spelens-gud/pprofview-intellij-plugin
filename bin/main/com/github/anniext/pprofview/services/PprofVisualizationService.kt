@@ -415,15 +415,6 @@ class PprofVisualizationService(private val project: Project) {
                 val outputPanel = PprofOutputPanel.getInstance(project)
                 outputPanel?.addOutputWithVisualization(title, content)
             }
-            
-            // 同时显示通知
-            val lines = content.lines().take(5)
-            val preview = lines.joinToString("\n")
-            showNotification(
-                title,
-                preview + if (content.lines().size > 5) "\n...\n查看 pprof Output 工具窗口获取完整输出和可视化图表" else "",
-                NotificationType.INFORMATION
-            )
         }
         
         logger.info("$title 输出:\n$content")

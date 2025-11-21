@@ -1,15 +1,19 @@
 package com.github.anniext.pprofview.services
 
+import com.github.anniext.pprofview.editor.PprofInlayRenderer
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -29,7 +33,35 @@ class PprofCodeNavigationService(private val project: Project) {
     private val logger = thisLogger()
     
     // 存储当前高亮的编辑器，用于清除高亮
-    private var currentHighlightedEditor: com.intellij.openapi.editor.Editor? = null
+    private var currentHighlightedEditor: Editor? = null
+    
+    // 存储当前高亮的文件，用于监听文件关闭事件
+    private var currentHighlightedFile: VirtualFile? = null
+    
+    // 存储当前的 inlay hints，用于清除
+    private val currentInlays = mutableListOf<Inlay<*>>()
+    
+    init {
+        // 监听文件关闭事件
+        setupFileCloseListener()
+    }
+    
+    /**
+     * 设置文件关闭监听器
+     * 当高亮的文件被关闭时，清除高亮
+     */
+    private fun setupFileCloseListener() {
+        val connection = project.messageBus.connect()
+        connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
+            override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
+                // 检查关闭的文件是否是当前高亮的文件
+                if (file == currentHighlightedFile) {
+                    logger.info("检测到高亮文件被关闭: ${file.path}，清除高亮")
+                    clearHighlights()
+                }
+            }
+        })
+    }
     
     /**
      * 导航到函数定义
@@ -382,23 +414,50 @@ class PprofCodeNavigationService(private val project: Project) {
             val highlightStartTime = System.currentTimeMillis()
             val markupModel = editor.markupModel
             
-            // 清除之前的高亮
+            // 如果是同一个编辑器，先清除旧的高亮和 inlay hints，避免叠加
             val clearStartTime = System.currentTimeMillis()
-            clearHighlights()
+            if (currentHighlightedEditor == editor) {
+                logger.info("  - 检测到同一编辑器，清除旧高亮避免叠加")
+                // 清除高亮
+                markupModel.removeAllHighlighters()
+                
+                // 清除 inlay hints
+                currentInlays.forEach { inlay ->
+                    try {
+                        inlay.dispose()
+                    } catch (e: Exception) {
+                        logger.warn("清除 inlay 失败: ${e.message}")
+                    }
+                }
+                currentInlays.clear()
+            }
+            
+            // 更新当前高亮的编辑器和文件引用
             currentHighlightedEditor = editor
+            currentHighlightedFile = virtualFile
             val clearDuration = System.currentTimeMillis() - clearStartTime
             logger.info("  - 清除旧高亮耗时: ${clearDuration}ms")
             
-            // 为每个热点行添加高亮
+            // 为每个热点行添加高亮和 inlay hints
             var highlightedCount = 0
+            var inlayCount = 0
+            logger.info("  - 开始处理 ${location.hotLines.size} 个热点行")
+            
             for (hotLine in location.hotLines) {
+                logger.info("  - 处理行 ${hotLine.lineNumber}: isHot=${hotLine.isHot}, flat=${hotLine.flat}, cum=${hotLine.cum}")
+                
                 if (!hotLine.isHot) continue
                 
                 val lineNumber = hotLine.lineNumber - 1 // 行号从 0 开始
-                if (lineNumber < 0 || lineNumber >= editor.document.lineCount) continue
+                if (lineNumber < 0 || lineNumber >= editor.document.lineCount) {
+                    logger.warn("  - 跳过无效行号: $lineNumber (文档总行数: ${editor.document.lineCount})")
+                    continue
+                }
                 
                 val startOffset = editor.document.getLineStartOffset(lineNumber)
                 val endOffset = editor.document.getLineEndOffset(lineNumber)
+                
+                logger.info("  - 行 ${hotLine.lineNumber} offset: start=$startOffset, end=$endOffset")
                 
                 // 根据性能数据强度选择颜色
                 val (backgroundColor, borderColor) = getHotLineColors(hotLine)
@@ -426,7 +485,13 @@ class PprofCodeNavigationService(private val project: Project) {
                 highlighter.errorStripeTooltip = tooltip
                 
                 highlightedCount++
+                
+                // 添加行尾 inlay hint 显示性能数据
+                addInlayHint(editor, lineNumber, hotLine)
+                inlayCount++
             }
+            
+            logger.info("  - 处理完成: 高亮 $highlightedCount 行, 尝试添加 $inlayCount 个 inlay hints")
             
             val highlightDuration = System.currentTimeMillis() - highlightStartTime
             logger.info("  - 添加高亮耗时: ${highlightDuration}ms")
@@ -678,14 +743,84 @@ class PprofCodeNavigationService(private val project: Project) {
     }
     
     /**
-     * 清除当前编辑器的高亮
+     * 添加行尾 inlay hint 显示性能数据
+     */
+    private fun addInlayHint(editor: Editor, lineNumber: Int, hotLine: HotLine) {
+        try {
+            // 构建 inlay hint 文本
+            val hintText = buildInlayHintText(hotLine)
+            
+            if (hintText.isEmpty()) {
+                logger.info("  - 跳过空的 inlay hint: 行 ${hotLine.lineNumber}")
+                return
+            }
+            
+            // 获取行尾 offset
+            val offset = editor.document.getLineEndOffset(lineNumber)
+            
+            logger.info("  - 准备添加 inlay hint: 行 ${hotLine.lineNumber}, lineNumber: $lineNumber, offset: $offset, 文本: $hintText")
+            
+            // 创建 inlay hint（行尾显示）
+            // 使用 addAfterLineEndElement 在行尾添加 inlay
+            val inlay = editor.inlayModel.addAfterLineEndElement(
+                offset,
+                true,
+                PprofInlayRenderer(hintText, hotLine)
+            )
+            
+            if (inlay != null) {
+                currentInlays.add(inlay)
+                logger.info("  - ✅ 成功添加 inlay hint: 行 ${hotLine.lineNumber}")
+            } else {
+                logger.warn("  - ❌ inlay 为 null: 行 ${hotLine.lineNumber}")
+            }
+        } catch (e: Exception) {
+            logger.error("添加 inlay hint 失败: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * 构建 inlay hint 文本
+     */
+    private fun buildInlayHintText(hotLine: HotLine): String {
+        val parts = mutableListOf<String>()
+        
+        if (hotLine.flat != ".") {
+            parts.add("flat: ${hotLine.flat}")
+        }
+        
+        if (hotLine.cum != ".") {
+            parts.add("cum: ${hotLine.cum}")
+        }
+        
+        return if (parts.isNotEmpty()) {
+            "  // ${parts.joinToString(", ")}"
+        } else {
+            ""
+        }
+    }
+    
+    /**
+     * 清除当前编辑器的高亮和 inlay hints
      */
     fun clearHighlights() {
         currentHighlightedEditor?.let { editor ->
             ApplicationManager.getApplication().invokeLater {
                 try {
+                    // 清除高亮
                     editor.markupModel.removeAllHighlighters()
-                    logger.info("已清除编辑器高亮")
+                    
+                    // 清除 inlay hints
+                    currentInlays.forEach { inlay ->
+                        try {
+                            inlay.dispose()
+                        } catch (e: Exception) {
+                            logger.warn("清除 inlay 失败: ${e.message}")
+                        }
+                    }
+                    currentInlays.clear()
+                    
+                    logger.info("已清除编辑器高亮和 inlay hints")
                 } catch (e: Exception) {
                     logger.warn("清除高亮失败: ${e.message}")
                 }

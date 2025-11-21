@@ -26,8 +26,8 @@ class PprofChartPanel(
         // 创建选项卡面板
         val tabbedPane = JTabbedPane()
         
-        // 添加概览面板（默认显示）
-        tabbedPane.addTab("概览", createOverviewPanel())
+        // 添加表格视图（第一个标签）
+        tabbedPane.addTab("详细数据", createTablePanel())
         
         // 添加柱状图
         tabbedPane.addTab("柱状图", createBarChartPanel())
@@ -35,208 +35,10 @@ class PprofChartPanel(
         // 添加饼图
         tabbedPane.addTab("饼图", createPieChartPanel())
         
-        // 添加表格视图
-        tabbedPane.addTab("详细数据", createTablePanel())
+        // 添加热力图
+        tabbedPane.addTab("热力图", createHeatmapPanel())
         
         add(tabbedPane, BorderLayout.CENTER)
-    }
-    
-    /**
-     * 创建概览面板
-     */
-    private fun createOverviewPanel(): JComponent {
-        val panel = JBPanel<JBPanel<*>>(BorderLayout())
-        panel.background = JBColor.background()
-        
-        // 创建统计信息面板
-        val statsPanel = JBPanel<JBPanel<*>>()
-        statsPanel.layout = BoxLayout(statsPanel, BoxLayout.Y_AXIS)
-        statsPanel.border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        statsPanel.background = JBColor.background()
-        
-        // 添加标题
-        val titleLabel = JLabel("性能分析概览")
-        titleLabel.font = Font("SansSerif", Font.BOLD, 20)
-        titleLabel.alignmentX = Component.LEFT_ALIGNMENT
-        statsPanel.add(titleLabel)
-        statsPanel.add(Box.createVerticalStrut(20))
-        
-        // 添加统计信息
-        val totalEntries = report.entries.size
-        val topEntries = report.entries.take(10)
-        val topTotal = topEntries.sumOf { it.flat }
-        val totalFlat = report.entries.sumOf { it.flat }
-        val topPercentage = if (totalFlat > 0) (topTotal.toDouble() / totalFlat * 100) else 0.0
-        
-        addStatRow(statsPanel, "总函数数量", "$totalEntries 个")
-        addStatRow(statsPanel, "数据单位", report.unit)
-        addStatRow(statsPanel, "Top 10 占比", String.format("%.1f%%", topPercentage))
-        
-        statsPanel.add(Box.createVerticalStrut(30))
-        
-        // 添加 Top 10 列表
-        val topLabel = JLabel("🔥 热点函数 Top 10")
-        topLabel.font = Font("SansSerif", Font.BOLD, 16)
-        topLabel.alignmentX = Component.LEFT_ALIGNMENT
-        statsPanel.add(topLabel)
-        statsPanel.add(Box.createVerticalStrut(10))
-        
-        topEntries.forEachIndexed { index, entry ->
-            val funcPanel = createFunctionCard(index + 1, entry)
-            funcPanel.alignmentX = Component.LEFT_ALIGNMENT
-            statsPanel.add(funcPanel)
-            statsPanel.add(Box.createVerticalStrut(8))
-        }
-        
-        val scrollPane = JBScrollPane(statsPanel)
-        scrollPane.border = null
-        panel.add(scrollPane, BorderLayout.CENTER)
-        
-        return panel
-    }
-    
-    /**
-     * 创建函数卡片
-     */
-    private fun createFunctionCard(rank: Int, entry: com.github.anniext.pprofview.parser.PprofEntry): JPanel {
-        val card = JBPanel<JBPanel<*>>(BorderLayout())
-        card.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor.border(), 1),
-            BorderFactory.createEmptyBorder(10, 15, 10, 15)
-        )
-        card.background = JBColor.background()
-        card.maximumSize = Dimension(Int.MAX_VALUE, 80)
-        
-        // 添加工具提示
-        card.toolTipText = buildString {
-            append("<html>")
-            append("<b>🔥 热点函数 #$rank</b><br>")
-            append("<hr>")
-            append("<b>完整函数名：</b><br>")
-            append("<code>${entry.functionName}</code><br>")
-            append("<hr>")
-            append("<b>性能指标：</b><br>")
-            append("• Flat: ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
-            append("• Cum: ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
-            append("• Sum%: ${String.format("%.2f%%", entry.sumPercent)}")
-            if (project != null && pprofFile != null) {
-                append("<br><hr>")
-                append("<i>💡 点击可跳转到代码位置</i>")
-            }
-            append("</html>")
-        }
-        
-        // 添加鼠标悬停效果
-        card.addMouseListener(object : MouseAdapter() {
-            override fun mouseEntered(e: MouseEvent) {
-                card.border = BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(getBarColor(rank - 1), 2),
-                    BorderFactory.createEmptyBorder(9, 14, 9, 14)
-                )
-                card.cursor = if (project != null && pprofFile != null) {
-                    Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                } else {
-                    Cursor.getDefaultCursor()
-                }
-            }
-            
-            override fun mouseExited(e: MouseEvent) {
-                card.border = BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(JBColor.border(), 1),
-                    BorderFactory.createEmptyBorder(10, 15, 10, 15)
-                )
-                card.cursor = Cursor.getDefaultCursor()
-            }
-            
-            override fun mouseClicked(e: MouseEvent) {
-                if (project != null && pprofFile != null) {
-                    navigateToCode(entry.functionName)
-                }
-            }
-        })
-        
-        // 左侧：排名和颜色指示器
-        val leftPanel = JBPanel<JBPanel<*>>()
-        leftPanel.layout = BoxLayout(leftPanel, BoxLayout.X_AXIS)
-        leftPanel.background = JBColor.background()
-        
-        val colorIndicator = JPanel()
-        colorIndicator.background = getBarColor(rank - 1)
-        colorIndicator.preferredSize = Dimension(4, 60)
-        leftPanel.add(colorIndicator)
-        leftPanel.add(Box.createHorizontalStrut(10))
-        
-        val rankLabel = JLabel("#$rank")
-        rankLabel.font = Font("SansSerif", Font.BOLD, 18)
-        rankLabel.foreground = JBColor.GRAY
-        leftPanel.add(rankLabel)
-        leftPanel.add(Box.createHorizontalStrut(15))
-        
-        // 中间：函数信息
-        val infoPanel = JBPanel<JBPanel<*>>()
-        infoPanel.layout = BoxLayout(infoPanel, BoxLayout.Y_AXIS)
-        infoPanel.background = JBColor.background()
-        
-        val funcNameLabel = JLabel(truncateFunctionName(entry.functionName, 60))
-        funcNameLabel.font = Font("SansSerif", Font.BOLD, 13)
-        funcNameLabel.alignmentX = Component.LEFT_ALIGNMENT
-        infoPanel.add(funcNameLabel)
-        infoPanel.add(Box.createVerticalStrut(5))
-        
-        val detailLabel = JLabel(String.format(
-            "Flat: %s (%.1f%%)  |  Cum: %s (%.1f%%)",
-            formatValue(entry.flat), entry.flatPercent,
-            formatValue(entry.cum), entry.cumPercent
-        ))
-        detailLabel.font = Font("SansSerif", Font.PLAIN, 11)
-        detailLabel.foreground = JBColor.GRAY
-        detailLabel.alignmentX = Component.LEFT_ALIGNMENT
-        infoPanel.add(detailLabel)
-        
-        // 右侧：百分比进度条
-        val rightPanel = JBPanel<JBPanel<*>>()
-        rightPanel.layout = BoxLayout(rightPanel, BoxLayout.Y_AXIS)
-        rightPanel.background = JBColor.background()
-        rightPanel.preferredSize = Dimension(120, 60)
-        
-        val percentLabel = JLabel(String.format("%.1f%%", entry.flatPercent))
-        percentLabel.font = Font("SansSerif", Font.BOLD, 16)
-        percentLabel.foreground = getBarColor(rank - 1)
-        percentLabel.alignmentX = Component.CENTER_ALIGNMENT
-        rightPanel.add(Box.createVerticalGlue())
-        rightPanel.add(percentLabel)
-        rightPanel.add(Box.createVerticalGlue())
-        
-        card.add(leftPanel, BorderLayout.WEST)
-        card.add(infoPanel, BorderLayout.CENTER)
-        card.add(rightPanel, BorderLayout.EAST)
-        
-        return card
-    }
-    
-    /**
-     * 添加统计行
-     */
-    private fun addStatRow(panel: JPanel, label: String, value: String) {
-        val row = JBPanel<JBPanel<*>>()
-        row.layout = BoxLayout(row, BoxLayout.X_AXIS)
-        row.background = JBColor.background()
-        row.alignmentX = Component.LEFT_ALIGNMENT
-        row.maximumSize = Dimension(Int.MAX_VALUE, 30)
-        
-        val labelComp = JLabel("$label: ")
-        labelComp.font = Font("SansSerif", Font.PLAIN, 14)
-        labelComp.foreground = JBColor.GRAY
-        
-        val valueComp = JLabel(value)
-        valueComp.font = Font("SansSerif", Font.BOLD, 14)
-        
-        row.add(labelComp)
-        row.add(valueComp)
-        row.add(Box.createHorizontalGlue())
-        
-        panel.add(row)
-        panel.add(Box.createVerticalStrut(5))
     }
     
     /**
@@ -328,7 +130,7 @@ class PprofChartPanel(
                 val entry = report.entries[index]
                 return buildString {
                     append("<html>")
-                    append("<b>🔥 函数性能详情</b><br>")
+                    append("<b>函数性能详情</b><br>")
                     append("<hr>")
                     append("<b>排名：</b> #${index + 1}<br>")
                     append("<b>函数名：</b> ${entry.functionName}<br>")
@@ -567,7 +369,7 @@ class PprofChartPanel(
                 
                 return buildString {
                     append("<html>")
-                    append("<b>📊 函数占比详情</b><br>")
+                    append("<b>函数占比详情</b><br>")
                     append("<hr>")
                     append("<b>排名：</b> #${index + 1}<br>")
                     append("<b>函数名：</b> ${entry.functionName}<br>")
@@ -877,7 +679,7 @@ class PprofChartPanel(
     private fun buildTableTooltip(row: Int, column: Int, entry: com.github.anniext.pprofview.parser.PprofEntry): String {
         return buildString {
             append("<html>")
-            append("<b>📈 性能数据详情</b><br>")
+            append("<b>性能数据详情</b><br>")
             append("<hr>")
             append("<b>排名：</b> #${row + 1}<br>")
             append("<b>函数名：</b><br>")
@@ -999,4 +801,272 @@ class PprofChartPanel(
             else -> value.toString()
         }
     }
+    
+    /**
+     * 创建热力图面板
+     */
+    private fun createHeatmapPanel(): JComponent {
+        val panel = object : JPanel() {
+            private var hoveredRect: TreemapRect? = null
+            private val treemapRects = mutableListOf<TreemapRect>()
+            
+            override fun paintComponent(g: Graphics) {
+                super.paintComponent(g)
+                treemapRects.clear()
+                drawHeatmap(g as Graphics2D, treemapRects)
+            }
+            
+            init {
+                // 添加鼠标移动监听器
+                addMouseMotionListener(object : MouseAdapter() {
+                    override fun mouseMoved(e: MouseEvent) {
+                        val newHoveredRect = treemapRects.firstOrNull { rect ->
+                            e.x >= rect.x && e.x <= rect.x + rect.width &&
+                            e.y >= rect.y && e.y <= rect.y + rect.height
+                        }
+                        
+                        if (newHoveredRect != hoveredRect) {
+                            hoveredRect = newHoveredRect
+                            repaint()
+                            
+                            toolTipText = hoveredRect?.let { buildHeatmapTooltip(it) }
+                        }
+                    }
+                })
+                
+                // 添加鼠标点击监听器
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent) {
+                        val clickedRect = treemapRects.firstOrNull { rect ->
+                            e.x >= rect.x && e.x <= rect.x + rect.width &&
+                            e.y >= rect.y && e.y <= rect.y + rect.height
+                        }
+                        
+                        clickedRect?.let {
+                            navigateToCode(it.entry.functionName)
+                        }
+                    }
+                    
+                    override fun mouseExited(e: MouseEvent) {
+                        if (hoveredRect != null) {
+                            hoveredRect = null
+                            repaint()
+                            toolTipText = null
+                        }
+                    }
+                })
+            }
+            
+            /**
+             * 构建热力图工具提示
+             */
+            private fun buildHeatmapTooltip(rect: TreemapRect): String {
+                val entry = rect.entry
+                return buildString {
+                    append("<html>")
+                    append("<b>函数热力详情</b><br>")
+                    append("<hr>")
+                    append("<b>排名：</b> #${rect.index + 1}<br>")
+                    append("<b>函数名：</b><br>")
+                    append("<code>${entry.functionName}</code><br>")
+                    append("<hr>")
+                    append("<b>Flat：</b> ${formatValue(entry.flat)} ${report.unit} (${String.format("%.2f%%", entry.flatPercent)})<br>")
+                    append("<b>Cum：</b> ${formatValue(entry.cum)} ${report.unit} (${String.format("%.2f%%", entry.cumPercent)})<br>")
+                    append("<hr>")
+                    append("<i>💡 矩形面积代表性能占比<br>")
+                    append("颜色深浅代表热点程度<br>")
+                    append("点击可跳转到代码位置</i>")
+                    append("</html>")
+                }
+            }
+        }
+        
+        panel.preferredSize = Dimension(800, 600)
+        panel.background = JBColor.WHITE
+        
+        return JBScrollPane(panel)
+    }
+    
+    /**
+     * 绘制热力图（矩形树图）
+     */
+    private fun drawHeatmap(g: Graphics2D, treemapRects: MutableList<TreemapRect>) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+        
+        val width = g.clipBounds.width
+        val height = g.clipBounds.height
+        val margin = 60
+        
+        // 绘制背景
+        g.color = JBColor.background()
+        g.fillRect(0, 0, width, height)
+        
+        // 取前 20 个条目
+        val topEntries = report.entries.take(20)
+        if (topEntries.isEmpty()) return
+        
+        // 绘制标题
+        g.color = JBColor.foreground()
+        g.font = Font("SansSerif", Font.BOLD, 18)
+        val title = "Top ${topEntries.size} 函数热力图"
+        val titleWidth = g.fontMetrics.stringWidth(title)
+        g.drawString(title, (width - titleWidth) / 2, 35)
+        
+        g.font = Font("SansSerif", Font.PLAIN, 11)
+        val subtitle = "矩形面积 = 性能占比 | 颜色深浅 = 热点程度 | 点击跳转代码"
+        val subtitleWidth = g.fontMetrics.stringWidth(subtitle)
+        g.drawString(subtitle, (width - subtitleWidth) / 2, 52)
+        
+        // 计算总值
+        val total = topEntries.sumOf { it.flat }.toDouble()
+        
+        // 使用 squarified treemap 算法布局矩形
+        val availableWidth = width - 2 * margin
+        val availableHeight = height - margin - 70
+        
+        layoutTreemap(
+            topEntries,
+            margin,
+            70,
+            availableWidth,
+            availableHeight,
+            total,
+            treemapRects,
+            g
+        )
+    }
+    
+    /**
+     * 布局矩形树图
+     */
+    private fun layoutTreemap(
+        entries: List<com.github.anniext.pprofview.parser.PprofEntry>,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        total: Double,
+        rects: MutableList<TreemapRect>,
+        g: Graphics2D
+    ) {
+        if (entries.isEmpty() || width <= 0 || height <= 0) return
+        
+        // 简化版本：使用行列布局
+        val cols = Math.ceil(Math.sqrt(entries.size.toDouble())).toInt()
+        val rows = Math.ceil(entries.size.toDouble() / cols).toInt()
+        
+        entries.forEachIndexed { index, entry ->
+            val row = index / cols
+            val col = index % cols
+            
+            val rectWidth = width / cols
+            val rectHeight = height / rows
+            val rectX = x + col * rectWidth
+            val rectY = y + row * rectHeight
+            
+            // 根据性能占比调整矩形大小（保持基本布局）
+            val percentage = entry.flat / total
+            val sizeMultiplier = 0.7 + (percentage * 3).coerceAtMost(0.3)
+            
+            val actualWidth = (rectWidth * sizeMultiplier).toInt()
+            val actualHeight = (rectHeight * sizeMultiplier).toInt()
+            val offsetX = (rectWidth - actualWidth) / 2
+            val offsetY = (rectHeight - actualHeight) / 2
+            
+            val finalX = rectX + offsetX
+            val finalY = rectY + offsetY
+            
+            // 保存矩形信息
+            val treemapRect = TreemapRect(
+                x = finalX,
+                y = finalY,
+                width = actualWidth,
+                height = actualHeight,
+                entry = entry,
+                index = index
+            )
+            rects.add(treemapRect)
+            
+            // 绘制矩形
+            drawTreemapRect(g, treemapRect, index)
+        }
+    }
+    
+    /**
+     * 绘制单个矩形
+     */
+    private fun drawTreemapRect(g: Graphics2D, rect: TreemapRect, index: Int) {
+        val entry = rect.entry
+        
+        // 根据性能数据选择颜色深浅
+        val baseColor = getBarColor(index)
+        val intensity = (entry.flatPercent / 100.0).coerceIn(0.0, 1.0)
+        val heatColor = Color(
+            (baseColor.red * (0.3 + intensity * 0.7)).toInt(),
+            (baseColor.green * (0.3 + intensity * 0.7)).toInt(),
+            (baseColor.blue * (0.3 + intensity * 0.7)).toInt()
+        )
+        
+        // 绘制阴影
+        g.color = JBColor(Color(0, 0, 0, 30), Color(0, 0, 0, 50))
+        g.fillRoundRect(rect.x + 3, rect.y + 3, rect.width, rect.height, 8, 8)
+        
+        // 绘制矩形（渐变效果）
+        val gradient = GradientPaint(
+            rect.x.toFloat(), rect.y.toFloat(), heatColor.brighter(),
+            rect.x.toFloat(), (rect.y + rect.height).toFloat(), heatColor
+        )
+        g.paint = gradient
+        g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, 8, 8)
+        
+        // 绘制边框
+        g.color = heatColor.darker()
+        g.stroke = BasicStroke(2f)
+        g.drawRoundRect(rect.x, rect.y, rect.width, rect.height, 8, 8)
+        
+        // 绘制文本（如果矩形足够大）
+        if (rect.width > 80 && rect.height > 40) {
+            g.color = Color.WHITE
+            
+            // 绘制排名
+            g.font = Font("SansSerif", Font.BOLD, 16)
+            val rankText = "#${index + 1}"
+            val rankWidth = g.fontMetrics.stringWidth(rankText)
+            g.drawString(rankText, rect.x + (rect.width - rankWidth) / 2, rect.y + 22)
+            
+            // 绘制百分比
+            g.font = Font("SansSerif", Font.BOLD, 14)
+            val percentText = String.format("%.1f%%", entry.flatPercent)
+            val percentWidth = g.fontMetrics.stringWidth(percentText)
+            g.drawString(percentText, rect.x + (rect.width - percentWidth) / 2, rect.y + rect.height / 2 + 5)
+            
+            // 绘制函数名（截断）
+            if (rect.height > 60) {
+                g.font = Font("SansSerif", Font.PLAIN, 10)
+                val funcName = truncateFunctionName(entry.functionName, 15)
+                val funcWidth = g.fontMetrics.stringWidth(funcName)
+                g.drawString(funcName, rect.x + (rect.width - funcWidth) / 2, rect.y + rect.height - 12)
+            }
+        } else if (rect.width > 40 && rect.height > 30) {
+            // 只显示排名
+            g.color = Color.WHITE
+            g.font = Font("SansSerif", Font.BOLD, 12)
+            val rankText = "#${index + 1}"
+            val rankWidth = g.fontMetrics.stringWidth(rankText)
+            g.drawString(rankText, rect.x + (rect.width - rankWidth) / 2, rect.y + rect.height / 2 + 4)
+        }
+    }
 }
+
+/**
+ * 矩形树图的矩形信息
+ */
+data class TreemapRect(
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val entry: com.github.anniext.pprofview.parser.PprofEntry,
+    val index: Int
+)
