@@ -6,7 +6,7 @@ import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.openapi.project.Project
 
 /**
- * Pprof 配置工厂
+ * Pprof configuration factory
  */
 class PprofConfigurationFactory(type: ConfigurationType) : ConfigurationFactory(type) {
     

@@ -13,8 +13,8 @@ import java.awt.Graphics
 import java.awt.Rectangle
 
 /**
- * pprof 性能数据 Inlay 渲染器
- * 在代码行尾显示性能分析数据
+ * pprof performance data Inlay renderer
+ * Displays performance analysis data at the end of code lines
  */
 class PprofInlayRenderer(
     private val text: String,
@@ -24,22 +24,22 @@ class PprofInlayRenderer(
     override fun calcWidthInPixels(inlay: Inlay<*>): Int {
         val editor = inlay.editor
         val fontMetrics = editor.contentComponent.getFontMetrics(getFont(editor))
-        return fontMetrics.stringWidth(text) + 16 // 添加左右边距
+        return fontMetrics.stringWidth(text) + 16 // Add left and right padding
     }
     
     override fun paint(inlay: Inlay<*>, g: Graphics, targetRegion: Rectangle, textAttributes: TextAttributes) {
         val editor = inlay.editor
         
-        // 设置抗锯齿
+        // Enable anti-aliasing
         (g as? java.awt.Graphics2D)?.setRenderingHint(
             java.awt.RenderingHints.KEY_TEXT_ANTIALIASING,
             java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON
         )
         
-        // 根据性能数据强度选择颜色
+        // Choose colors based on performance data intensity
         val (bgColor, fgColor) = getColors()
         
-        // 绘制圆角背景
+        // Draw rounded background
         g.color = bgColor
         g.fillRoundRect(
             targetRegion.x + 4,
@@ -50,7 +50,7 @@ class PprofInlayRenderer(
             6
         )
         
-        // 绘制边框
+        // Draw border
         g.color = fgColor.darker()
         (g as? java.awt.Graphics2D)?.stroke = java.awt.BasicStroke(1.0f)
         g.drawRoundRect(
@@ -62,7 +62,7 @@ class PprofInlayRenderer(
             6
         )
         
-        // 绘制文本
+        // Draw text
         g.color = fgColor
         g.font = getFont(editor)
         
@@ -74,7 +74,7 @@ class PprofInlayRenderer(
     }
     
     /**
-     * 获取字体
+     * Get font for rendering
      */
     private fun getFont(editor: Editor): Font {
         val baseFont = editor.colorsScheme.getFont(EditorFontType.PLAIN)
@@ -82,8 +82,8 @@ class PprofInlayRenderer(
     }
     
     /**
-     * 根据热点数据获取颜色
-     * 返回 Pair<背景色, 前景色>
+     * Get colors based on hotspot data
+     * Returns Pair<background color, foreground color>
      */
     private fun getColors(): Pair<Color, Color> {
         val flatValue = parsePerformanceValue(hotLine.flat)
@@ -92,50 +92,50 @@ class PprofInlayRenderer(
         
         return when {
             maxValue >= 100 -> {
-                // 高热点：红色
+                // High hotspot: red
                 JBColor(
-                    Color(255, 235, 238, 200),  // 浅色主题
-                    Color(100, 45, 50, 180)     // 深色主题
+                    Color(255, 235, 238, 200),  // Light theme
+                    Color(100, 45, 50, 180)     // Dark theme
                 ) to JBColor(
-                    Color(198, 40, 40),         // 浅色主题
-                    Color(239, 154, 154)        // 深色主题
+                    Color(198, 40, 40),         // Light theme
+                    Color(239, 154, 154)        // Dark theme
                 )
             }
             maxValue >= 10 -> {
-                // 中热点：橙色
+                // Medium hotspot: orange
                 JBColor(
-                    Color(255, 243, 224, 200),  // 浅色主题
-                    Color(100, 75, 45, 180)     // 深色主题
+                    Color(255, 243, 224, 200),  // Light theme
+                    Color(100, 75, 45, 180)     // Dark theme
                 ) to JBColor(
-                    Color(230, 81, 0),          // 浅色主题
-                    Color(255, 183, 77)         // 深色主题
+                    Color(230, 81, 0),          // Light theme
+                    Color(255, 183, 77)         // Dark theme
                 )
             }
             maxValue > 0 -> {
-                // 低热点：黄色
+                // Low hotspot: yellow
                 JBColor(
-                    Color(255, 248, 225, 200),  // 浅色主题
-                    Color(100, 90, 45, 180)     // 深色主题
+                    Color(255, 248, 225, 200),  // Light theme
+                    Color(100, 90, 45, 180)     // Dark theme
                 ) to JBColor(
-                    Color(245, 124, 0),         // 浅色主题
-                    Color(255, 213, 79)         // 深色主题
+                    Color(245, 124, 0),         // Light theme
+                    Color(255, 213, 79)         // Dark theme
                 )
             }
             else -> {
-                // 默认：灰色
+                // Default: gray
                 JBColor(
-                    Color(245, 245, 245, 200),  // 浅色主题
-                    Color(60, 60, 60, 180)      // 深色主题
+                    Color(245, 245, 245, 200),  // Light theme
+                    Color(60, 60, 60, 180)      // Dark theme
                 ) to JBColor(
-                    Color(117, 117, 117),       // 浅色主题
-                    Color(189, 189, 189)        // 深色主题
+                    Color(117, 117, 117),       // Light theme
+                    Color(189, 189, 189)        // Dark theme
                 )
             }
         }
     }
     
     /**
-     * 解析性能数据值
+     * Parse performance data value
      */
     private fun parsePerformanceValue(value: String): Double {
         if (value == ".") return 0.0

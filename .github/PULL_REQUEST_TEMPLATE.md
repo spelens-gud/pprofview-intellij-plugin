@@ -1,54 +1,54 @@
-## 变更描述
+## Description
 
-简要描述这个 PR 的变更内容。
+Brief description of the changes in this PR.
 
-## 变更类型
+## Type of Change
 
-请删除不相关的选项：
+Please delete options that are not relevant:
 
-- [ ] Bug 修复（不破坏现有功能的变更）
-- [ ] 新功能（不破坏现有功能的变更）
-- [ ] 破坏性变更（会导致现有功能不正常工作的修复或功能）
-- [ ] 文档更新
-- [ ] 代码重构
-- [ ] 性能优化
-- [ ] 测试相关
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Code refactoring
+- [ ] Performance improvement
+- [ ] Test related
 
-## 相关 Issue
+## Related Issue
 
-关闭 #(issue 编号)
+Closes #(issue number)
 
-## 变更清单
+## Checklist
 
-- [ ] 我的代码遵循项目的代码风格
-- [ ] 我已经进行了自我审查
-- [ ] 我已经添加了必要的注释，特别是在难以理解的地方
-- [ ] 我已经更新了相关文档
-- [ ] 我的变更没有产生新的警告
-- [ ] 我已经添加了测试来证明我的修复有效或功能正常工作
-- [ ] 新的和现有的单元测试都通过了
-- [ ] 我已经在本地测试了这些变更
+- [ ] My code follows the project's code style
+- [ ] I have performed a self-review of my code
+- [ ] I have added necessary comments, especially in hard-to-understand areas
+- [ ] I have updated relevant documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally
+- [ ] I have tested these changes locally
 
-## 测试说明
+## Testing Instructions
 
-描述你如何测试这些变更：
+Describe how to test these changes:
 
-1. 测试步骤 1
-2. 测试步骤 2
+1. Test step 1
+2. Test step 2
 3. ...
 
-## 截图（如果适用）
+## Screenshots (if applicable)
 
-添加截图来展示变更效果。
+Add screenshots to demonstrate the changes.
 
-## 附加信息
+## Additional Information
 
-添加任何其他关于这个 PR 的信息。
+Add any other information about this PR here.
 
-## 检查清单
+## Verification
 
-- [ ] 代码构建成功
-- [ ] 所有测试通过
-- [ ] 代码检查通过
-- [ ] 文档已更新
-- [ ] CHANGELOG.md 已更新（如果需要）
+- [ ] Code builds successfully
+- [ ] All tests pass
+- [ ] Code inspection passes
+- [ ] Documentation updated
+- [ ] CHANGELOG.md updated (if needed)

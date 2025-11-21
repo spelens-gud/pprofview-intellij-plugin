@@ -1,17 +1,22 @@
 package com.github.spelens.pprofview.runconfig
 
+import com.github.spelens.pprofview.PprofViewBundle
+
 /**
- * pprof 性能分析类型
+ * pprof profile type
  */
-enum class PprofProfileType(val displayName: String, val fileName: String) {
-    CPU("CPU 分析", "cpu.pprof"),
-    HEAP("堆内存分析", "heap.pprof"),
-    GOROUTINE("协程分析", "goroutine.pprof"),
-    THREAD_CREATE("线程创建分析", "threadcreate.pprof"),
-    BLOCK("阻塞分析", "block.pprof"),
-    MUTEX("互斥锁分析", "mutex.pprof"),
-    ALLOCS("内存分配分析", "allocs.pprof"),
-    TRACE("执行追踪", "trace.out");
+enum class PprofProfileType(val messageKey: String, val fileName: String) {
+    CPU("pprof.type.cpu", "cpu.pprof"),
+    HEAP("pprof.type.heap", "heap.pprof"),
+    GOROUTINE("pprof.type.goroutine", "goroutine.pprof"),
+    THREAD_CREATE("pprof.type.threadCreate", "threadcreate.pprof"),
+    BLOCK("pprof.type.block", "block.pprof"),
+    MUTEX("pprof.type.mutex", "mutex.pprof"),
+    ALLOCS("pprof.type.allocs", "allocs.pprof"),
+    TRACE("pprof.type.trace", "trace.out");
+    
+    val displayName: String
+        get() = PprofViewBundle.message(messageKey)
 
     companion object {
         fun fromString(value: String?): PprofProfileType? {

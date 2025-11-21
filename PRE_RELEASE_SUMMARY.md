@@ -1,223 +1,224 @@
-# 发布准备总结
+# Pre-Release Summary
 
-本文档总结了为发布 Pprof Plus 插件所做的准备工作。
+English | [简体中文](PRE_RELEASE_SUMMARY_ZH.md)
 
-## ✅ 已完成的工作
+This document summarizes the preparation work done for releasing Pprof Plus plugin.
 
-### 1. 核心文档
+## ✅ Completed Work
 
-- ✅ **LICENSE** - MIT 许可证文件
-- ✅ **CONTRIBUTING.md** - 贡献指南，包含开发规范和提交流程
-- ✅ **RELEASE.md** - 快速发布指南，提供简化的发布步骤
-- ✅ **README.md** - 英文项目说明（已存在）
-- ✅ **README_ZH.md** - 中文项目说明（已存在）
-- ✅ **CHANGELOG.md** - 更新日志（已存在）
+### 1. Core Documentation
 
-### 2. GitHub 配置
+- ✅ **LICENSE** - MIT License file
+- ✅ **CONTRIBUTING.md** - Contributing guide with development standards and submission process
+- ✅ **RELEASE.md** - Quick release guide with simplified release steps
+- ✅ **README.md** - English project documentation (existing)
+- ✅ **README_ZH.md** - Chinese project documentation (existing)
+- ✅ **CHANGELOG.md** - Changelog (existing)
 
-#### Issue 和 PR 模板
-- ✅ `.github/ISSUE_TEMPLATE/bug_report.md` - Bug 报告模板
-- ✅ `.github/ISSUE_TEMPLATE/feature_request.md` - 功能请求模板
-- ✅ `.github/PULL_REQUEST_TEMPLATE.md` - Pull Request 模板
+### 2. GitHub Configuration
 
-#### 发布文档
-- ✅ `.github/RELEASE_CHECKLIST.md` - 详细的发布检查清单
-- ✅ `.github/SECRETS_SETUP.md` - GitHub Secrets 配置指南
-- ✅ `.github/README.md` - GitHub 配置文件说明
+#### Issue and PR Templates
+- ✅ `.github/ISSUE_TEMPLATE/bug_report.md` - Bug report template
+- ✅ `.github/ISSUE_TEMPLATE/feature_request.md` - Feature request template
+- ✅ `.github/PULL_REQUEST_TEMPLATE.md` - Pull Request template
 
-#### 工作流
-- ✅ `.github/workflows/build.yml` - 构建和测试工作流（已存在）
-- ✅ `.github/workflows/release.yml` - 发布工作流（已存在）
-- ✅ `.github/workflows/run-ui-tests.yml` - UI 测试工作流（已存在）
+#### Release Documentation
+- ✅ `.github/RELEASE_CHECKLIST.md` - Detailed release checklist
+- ✅ `.github/SECRETS_SETUP.md` - GitHub Secrets setup guide
+- ✅ `.github/README.md` - GitHub configuration files documentation
 
-### 3. 自动化脚本
+#### Workflows
+- ✅ `.github/workflows/build.yml` - Build and test workflow (existing)
+- ✅ `.github/workflows/release.yml` - Release workflow (existing)
+- ✅ `.github/workflows/run-ui-tests.yml` - UI test workflow (existing)
 
-- ✅ `scripts/release.sh` - 自动化发布脚本
-  - 版本号验证
-  - 自动运行测试
-  - 自动更新版本号
-  - 自动创建 tag 并推送
+### 3. Automation Scripts
 
-### 4. 构建配置优化
+- ✅ `scripts/release.sh` - Automated release script
+  - Version number validation
+  - Automatic test execution
+  - Automatic version number update
+  - Automatic tag creation and push
 
-- ✅ 禁用 `buildSearchableOptions` 任务，消除构建警告
+### 4. Build Configuration Optimization
 
-## 📋 发布前检查清单
+- ✅ Disabled `buildSearchableOptions` task to eliminate build warnings
 
-### 必需完成的配置
+## 📋 Pre-Release Checklist
 
-#### 1. GitHub Secrets（⚠️ 必需）
+### Required Configuration
 
-在 GitHub 仓库设置中配置以下 Secrets：
+#### 1. GitHub Secrets (⚠️ Required)
 
-- [ ] **PUBLISH_TOKEN** - JetBrains Marketplace 发布令牌
-  - 📖 参考：`.github/SECRETS_SETUP.md`
+Configure the following Secrets in GitHub repository settings:
+
+- [ ] **PUBLISH_TOKEN** - JetBrains Marketplace publishing token
+  - 📖 Reference: `.github/SECRETS_SETUP.md`
   
-- [ ] **CERTIFICATE_CHAIN** - 插件签名证书链
-  - 📖 参考：`.github/SECRETS_SETUP.md`
+- [ ] **CERTIFICATE_CHAIN** - Plugin signing certificate chain
+  - 📖 Reference: `.github/SECRETS_SETUP.md`
   
-- [ ] **PRIVATE_KEY** - 插件签名私钥
-  - 📖 参考：`.github/SECRETS_SETUP.md`
+- [ ] **PRIVATE_KEY** - Plugin signing private key
+  - 📖 Reference: `.github/SECRETS_SETUP.md`
   
-- [ ] **PRIVATE_KEY_PASSWORD** - 私钥密码
-  - 📖 参考：`.github/SECRETS_SETUP.md`
+- [ ] **PRIVATE_KEY_PASSWORD** - Private key password
+  - 📖 Reference: `.github/SECRETS_SETUP.md`
 
-#### 2. 代码质量检查
+#### 2. Code Quality Checks
 
-- [ ] 运行测试：`./gradlew test`
-- [ ] 运行插件验证：`./gradlew verifyPlugin`
-- [ ] 构建插件：`./gradlew buildPlugin`
-- [ ] 本地测试：`./gradlew runIde`
+- [ ] Run tests: `./gradlew test`
+- [ ] Run plugin verification: `./gradlew verifyPlugin`
+- [ ] Build plugin: `./gradlew buildPlugin`
+- [ ] Local testing: `./gradlew runIde`
 
-#### 3. 文档检查
+#### 3. Documentation Review
 
-- [ ] README.md 内容准确完整
-- [ ] README_ZH.md 与英文版本同步
-- [ ] CHANGELOG.md 已更新当前版本的变更
-- [ ] 所有链接可访问
+- [ ] README.md content accurate and complete
+- [ ] README_ZH.md synchronized with English version
+- [ ] CHANGELOG.md updated with current version changes
+- [ ] All links accessible
 
-#### 4. 插件配置
+#### 4. Plugin Configuration
 
-- [ ] `plugin.xml` 中的插件描述准确
-- [ ] `gradle.properties` 中的版本号正确
-- [ ] 插件图标存在（`pluginIcon.svg`）
+- [ ] Plugin description in `plugin.xml` is accurate
+- [ ] Version number in `gradle.properties` is correct
+- [ ] Plugin icon exists (`pluginIcon.svg`)
 
-## 🚀 发布流程
+## 🚀 Release Process
 
-### 方式 1: 使用自动化脚本（推荐）
+### Method 1: Using Automation Script (Recommended)
 
 ```bash
-# 运行发布脚本
+# Run release script
 ./scripts/release.sh 1.0.0
 
-# 脚本会自动：
-# 1. 验证版本号格式
-# 2. 运行测试和验证
-# 3. 更新版本号
-# 4. 提交变更
-# 5. 创建并推送 tag
+# Script will automatically:
+# 1. Validate version number format
+# 2. Run tests and verification
+# 3. Update version number
+# 4. Commit changes
+# 5. Create and push tag
 ```
 
-### 方式 2: 手动发布
+### Method 2: Manual Release
 
 ```bash
-# 1. 更新版本号（在 gradle.properties 中）
+# 1. Update version number (in gradle.properties)
 pluginVersion = 1.0.0
 
-# 2. 更新 CHANGELOG.md
+# 2. Update CHANGELOG.md
 
-# 3. 提交变更
+# 3. Commit changes
 git add gradle.properties CHANGELOG.md
 git commit -m "chore: prepare release 1.0.0"
 git push origin main
 
-# 4. 创建并推送 tag
+# 4. Create and push tag
 git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 ```
 
-### 发布后的步骤
+### Post-Release Steps
 
-1. **等待 CI 构建**
-   - 访问 [GitHub Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
-   - 等待 Build 工作流完成（约 10-20 分钟）
+1. **Wait for CI Build**
+   - Visit [GitHub Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
+   - Wait for Build workflow to complete (about 10-20 minutes)
 
-2. **发布 Draft Release**
-   - 访问 [Releases](https://github.com/spelens-gud/pprofview-intellij-plugin/releases)
-   - 检查自动创建的 Draft Release
-   - 点击 "Publish release"
+2. **Publish Draft Release**
+   - Visit [Releases](https://github.com/spelens-gud/pprofview-intellij-plugin/releases)
+   - Check auto-created Draft Release
+   - Click "Publish release"
 
-3. **等待 Marketplace 发布**
-   - GitHub Actions 会自动发布到 JetBrains Marketplace
-   - 等待 JetBrains 审核（几小时到几天）
+3. **Wait for Marketplace Publication**
+   - GitHub Actions will automatically publish to JetBrains Marketplace
+   - Wait for JetBrains review (hours to days)
 
-4. **验证发布**
-   - 在 Marketplace 中确认插件已发布
-   - 在 IDE 中测试安装
+4. **Verify Release**
+   - Confirm plugin is published in Marketplace
+   - Test installation in IDE
 
-## 📚 相关文档
+## 📚 Related Documentation
 
-### 快速参考
-- 🚀 [快速发布指南](RELEASE.md) - 简化的发布步骤
-- 📋 [详细检查清单](.github/RELEASE_CHECKLIST.md) - 完整的发布检查项
-- 🔐 [Secrets 配置](.github/SECRETS_SETUP.md) - GitHub Secrets 配置指南
+### Quick Reference
+- 🚀 [Quick Release Guide](RELEASE.md) - Simplified release steps
+- 📋 [Detailed Checklist](.github/RELEASE_CHECKLIST.md) - Complete release checklist
+- 🔐 [Secrets Setup](.github/SECRETS_SETUP.md) - GitHub Secrets setup guide
 
-### 开发文档
-- 🤝 [贡献指南](CONTRIBUTING.md) - 如何贡献代码
-- 📖 [项目规范](.kiro/steering/project-standards.md) - 代码规范和项目结构
-- 📝 [更新日志](CHANGELOG.md) - 版本历史
+### Development Documentation
+- 🤝 [Contributing Guide](CONTRIBUTING_EN.md) - How to contribute code
+- 📝 [Changelog](CHANGELOG_EN.md) - Version history
 
-### GitHub 配置
-- 🐛 [Bug 报告模板](.github/ISSUE_TEMPLATE/bug_report.md)
-- ✨ [功能请求模板](.github/ISSUE_TEMPLATE/feature_request.md)
-- 🔀 [PR 模板](.github/PULL_REQUEST_TEMPLATE.md)
+### GitHub Configuration
+- 🐛 [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
+- ✨ [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
+- 🔀 [PR Template](.github/PULL_REQUEST_TEMPLATE.md)
 
-## 🎯 下一步行动
+## 🎯 Next Steps
 
-### 立即执行
+### Immediate Actions
 
-1. **配置 GitHub Secrets**（最重要！）
-   - 按照 `.github/SECRETS_SETUP.md` 配置所有必需的 Secrets
-   - 没有这些配置，无法发布到 Marketplace
+1. **Configure GitHub Secrets** (Most Important!)
+   - Follow `.github/SECRETS_SETUP.md` to configure all required Secrets
+   - Cannot publish to Marketplace without these configurations
 
-2. **运行完整测试**
+2. **Run Complete Tests**
    ```bash
    ./gradlew test
    ./gradlew verifyPlugin
    ./gradlew buildPlugin
    ```
 
-3. **本地测试插件**
+3. **Local Plugin Testing**
    ```bash
    ./gradlew runIde
    ```
 
-### 准备发布
+### Prepare for Release
 
-1. **最终检查**
-   - 使用 `.github/RELEASE_CHECKLIST.md` 进行完整检查
-   - 确保所有文档准确无误
+1. **Final Check**
+   - Use `.github/RELEASE_CHECKLIST.md` for complete check
+   - Ensure all documentation is accurate
 
-2. **执行发布**
+2. **Execute Release**
    ```bash
    ./scripts/release.sh 1.0.0
    ```
 
-3. **监控发布流程**
-   - 关注 GitHub Actions 构建状态
-   - 及时处理任何错误
+3. **Monitor Release Process**
+   - Watch GitHub Actions build status
+   - Handle any errors promptly
 
-## ⚠️ 重要提醒
+## ⚠️ Important Reminders
 
-1. **首次发布**
-   - 首次发布需要更长的审核时间
-   - 确保插件描述清晰、准确
-   - 提供足够的文档和示例
+1. **First Release**
+   - First release requires longer review time
+   - Ensure plugin description is clear and accurate
+   - Provide sufficient documentation and examples
 
-2. **版本号规范**
-   - 遵循语义化版本（SemVer）
-   - 主版本号.次版本号.修订号
-   - 例如：1.0.0, 1.1.0, 1.0.1
+2. **Version Numbering**
+   - Follow Semantic Versioning (SemVer)
+   - Major.Minor.Patch
+   - Example: 1.0.0, 1.1.0, 1.0.1
 
-3. **安全性**
-   - 妥善保管私钥和证书
-   - 不要将 Secrets 提交到代码仓库
-   - 定期轮换 API Token
+3. **Security**
+   - Keep private keys and certificates secure
+   - Never commit Secrets to code repository
+   - Rotate API Tokens regularly
 
-4. **测试充分**
-   - 在多个 IDE 版本中测试
-   - 测试所有主要功能
-   - 确保没有严重 bug
+4. **Test Thoroughly**
+   - Test in multiple IDE versions
+   - Test all major features
+   - Ensure no critical bugs
 
-## 📞 获取帮助
+## 📞 Getting Help
 
-如果遇到问题：
+If you encounter issues:
 
-1. 查看相关文档（见上方"相关文档"部分）
-2. 检查 [GitHub Actions 日志](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
-3. 查看 [IntelliJ Platform 文档](https://plugins.jetbrains.com/docs/intellij/)
-4. 在项目中创建 Issue
+1. Check relevant documentation (see "Related Documentation" section above)
+2. Check [GitHub Actions Logs](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
+3. Refer to [IntelliJ Platform Documentation](https://plugins.jetbrains.com/docs/intellij/)
+4. Create an Issue in the project
 
 ---
 
-**祝发布顺利！🎉**
+**Good luck with the release! 🎉**

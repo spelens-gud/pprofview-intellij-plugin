@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.services
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.github.spelens.pprofview.actions.VisualizationType
 import com.github.spelens.pprofview.toolWindow.PprofOutputPanel
 import com.intellij.execution.configurations.GeneralCommandLine
@@ -22,8 +23,8 @@ import java.net.URI
 import java.util.regex.Pattern
 
 /**
- * pprof 可视化服务
- * 负责调用 go tool pprof 进行数据可视化
+ * pprof visualization service
+ * Responsible for calling go tool pprof for data visualization
  */
 @Service(Service.Level.PROJECT)
 class PprofVisualizationService(private val project: Project) {

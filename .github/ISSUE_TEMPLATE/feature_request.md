@@ -1,41 +1,41 @@
 ---
-name: 功能请求
-about: 为这个项目提出一个想法
+name: Feature Request
+about: Suggest an idea for this project
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## 功能描述
+## Feature Description
 
-清晰简洁地描述你想要的功能。
+A clear and concise description of the feature you'd like.
 
-## 问题背景
+## Problem Statement
 
-描述这个功能要解决什么问题。例如：我总是感到沮丧当 [...]
+Describe the problem this feature would solve. For example: I'm always frustrated when [...]
 
-## 期望的解决方案
+## Proposed Solution
 
-清晰简洁地描述你希望发生什么。
+A clear and concise description of what you want to happen.
 
-## 替代方案
+## Alternatives Considered
 
-清晰简洁地描述你考虑过的任何替代解决方案或功能。
+A clear and concise description of any alternative solutions or features you've considered.
 
-## 使用场景
+## Use Cases
 
-描述这个功能的典型使用场景：
+Describe typical use cases for this feature:
 
-1. 作为一个 [用户类型]
-2. 我想要 [做什么]
-3. 以便 [达到什么目的]
+1. As a [user type]
+2. I want to [do something]
+3. So that [achieve some goal]
 
-## 附加信息
+## Additional Context
 
-添加任何其他关于功能请求的上下文或截图。
+Add any other context or screenshots about the feature request here.
 
-## 优先级
+## Priority
 
-- [ ] 高 - 这个功能对我的工作流程至关重要
-- [ ] 中 - 这个功能会很有用
-- [ ] 低 - 这是一个不错的补充
+- [ ] High - This feature is critical to my workflow
+- [ ] Medium - This feature would be very useful
+- [ ] Low - This would be a nice addition

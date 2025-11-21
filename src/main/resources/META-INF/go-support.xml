@@ -1,7 +1,7 @@
 <idea-plugin>
-    <!-- Go 插件支持配置 -->
+    <!-- Go plugin support configuration -->
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Pprof 运行配置类型 -->
+        <!-- Pprof run configuration type -->
         <configurationType implementation="com.github.spelens.pprofview.runconfig.PprofConfigurationType"/>
     </extensions>
 </idea-plugin>

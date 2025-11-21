@@ -1,50 +1,50 @@
 ---
-name: Bug 报告
-about: 报告一个问题帮助我们改进
+name: Bug Report
+about: Report a bug to help us improve
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## 问题描述
+## Bug Description
 
-简洁清晰地描述这个 bug。
+A clear and concise description of the bug.
 
-## 复现步骤
+## Steps to Reproduce
 
-1. 打开 '...'
-2. 点击 '...'
-3. 滚动到 '...'
-4. 看到错误
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
-## 预期行为
+## Expected Behavior
 
-清晰简洁地描述你期望发生什么。
+A clear and concise description of what you expected to happen.
 
-## 实际行为
+## Actual Behavior
 
-清晰简洁地描述实际发生了什么。
+A clear and concise description of what actually happened.
 
-## 截图
+## Screenshots
 
-如果适用，添加截图来帮助解释你的问题。
+If applicable, add screenshots to help explain the problem.
 
-## 环境信息
+## Environment
 
-- **IDE**: [例如 GoLand 2025.2, IntelliJ IDEA 2025.2]
-- **插件版本**: [例如 1.0.0]
-- **Go 版本**: [例如 1.21.0]
-- **操作系统**: [例如 macOS 14.0, Windows 11, Ubuntu 22.04]
-- **JVM 版本**: [例如 21.0.1]
+- **IDE**: [e.g., GoLand 2025.2, IntelliJ IDEA 2025.2]
+- **Plugin Version**: [e.g., 1.0.0]
+- **Go Version**: [e.g., 1.21.0]
+- **OS**: [e.g., macOS 14.0, Windows 11, Ubuntu 22.04]
+- **JVM Version**: [e.g., 21.0.1]
 
-## 日志信息
+## Logs
 
-如果有相关的错误日志，请粘贴在这里：
+If you have relevant error logs, paste them here:
 
 ```
-粘贴日志内容
+Paste log content
 ```
 
-## 附加信息
+## Additional Context
 
-添加任何其他关于问题的上下文信息。
+Add any other context about the problem here.

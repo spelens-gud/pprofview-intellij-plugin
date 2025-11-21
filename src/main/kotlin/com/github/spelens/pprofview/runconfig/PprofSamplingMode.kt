@@ -1,11 +1,16 @@
 package com.github.spelens.pprofview.runconfig
 
+import com.github.spelens.pprofview.PprofViewBundle
+
 /**
- * pprof 采样模式
+ * pprof sampling mode
  */
-enum class PprofSamplingMode(val displayName: String) {
-    SINGLE("单次采样"),
-    LOOP("循环采样");
+enum class PprofSamplingMode(val messageKey: String) {
+    SINGLE("pprof.samplingMode.single"),
+    LOOP("pprof.samplingMode.loop");
+    
+    val displayName: String
+        get() = PprofViewBundle.message(messageKey)
 
     companion object {
         fun fromString(value: String?): PprofSamplingMode {

@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 
 /**
- * 插件启动活动
- * 用于验证插件是否正确加载
+ * Plugin startup activity
+ * Used to verify that the plugin is loaded correctly
  */
 class PluginStartupActivity : ProjectActivity {
     private val logger = thisLogger()

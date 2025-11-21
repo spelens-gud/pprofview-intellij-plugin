@@ -1,84 +1,82 @@
-<!-- Keep a Changelog guide -> https://keepachangelog.com -->
+# Pprof Plus Changelog
 
-# Pprof Plus 更新日志
-
-所有重要的项目变更都将记录在此文件中。
+All notable changes to this project will be documented in this file.
 
 ## [1.0.0] - 2025-11-21
 
-### 首次发布
+### Initial Release
 
-Pprof Plus 1.0.0 正式发布！这是一个功能完整的 Go 性能分析插件，为 GoLand 和 IntelliJ IDEA 用户提供强大的 pprof 可视化和分析能力。
+Pprof Plus 1.0.0 is officially released! This is a fully-featured Go performance analysis plugin that provides powerful pprof visualization and analysis capabilities for GoLand and IntelliJ IDEA users.
 
-### 核心功能
+### Core Features
 
-#### go tool pprof 可视化集成
-  - 右键菜单操作：直接对 pprof 文件进行可视化
-  - 支持 7 种可视化类型：
-    - Web 浏览器（交互式界面）
-    - 文本报告
-    - 调用图 SVG
-    - 火焰图 SVG
-    - Top 函数
-    - 函数列表
-    - 简要信息
-  - pprof Output 工具窗口：显示文本输出结果
-  - 自动打开功能：运行配置完成后自动打开可视化
-  - 通知提示：实时反馈操作状态
+#### go tool pprof Visualization Integration
+  - Context menu actions: Visualize pprof files directly
+  - Support for 7 visualization types:
+    - Web Browser (Interactive UI)
+    - Text Report
+    - Call Graph SVG
+    - Flame Graph SVG
+    - Top Functions
+    - Function List
+    - Brief Info
+  - pprof Output tool window: Display text output results
+  - Auto-open feature: Automatically opens visualization after run configuration completes
+  - Notification alerts: Real-time feedback on operation status
 
-#### Pprof 运行配置
-  - 支持三种运行种类：文件、目录、软件包
-  - 响应式智能填充：
-    - 文件模式：自动查找 main.go 或包含 main 函数的文件
-    - 目录模式：自动使用工作目录
-    - 软件包模式：自动读取 go.mod 并扫描所有子包
-  - 动态更新：切换运行种类或更改工作目录时自动更新选项
-  - 支持多种采集模式：运行时采样、HTTP 服务、手动采集、编译时插桩
-  - 支持多种性能分析类型：CPU、堆内存、协程、阻塞、互斥锁、内存分配
-  - 可配置工作目录、程序参数、环境变量、Go 构建标志
-  - 自动设置 pprof 相关环境变量
-  - 可配置输出目录和采样参数
-  - 支持测试模式：可以对 Go 测试文件进行性能分析
+#### Pprof Run Configuration
+  - Support for three run kinds: File, Directory, Package
+  - Responsive smart auto-fill:
+    - File mode: Automatically finds main.go or files containing main function
+    - Directory mode: Automatically uses working directory
+    - Package mode: Automatically reads go.mod and scans all sub-packages
+  - Dynamic updates: Automatically updates options when switching run kind or changing working directory
+  - Support for multiple collection modes: Runtime Sampling, HTTP Service, Manual Collection, Compile-time Instrumentation
+  - Support for multiple profile types: CPU, Heap, Goroutine, Block, Mutex, Allocs
+  - Configurable working directory, program arguments, environment variables, Go build flags
+  - Automatically sets pprof-related environment variables
+  - Configurable output directory and sampling parameters
+  - Support for test mode: Can profile Go test files
 
-#### 代码导航功能
-  - 点击图表中的函数名可直接跳转到源代码位置
-  - 智能函数名匹配：支持多种 Go 函数名格式
-    - 包路径函数：`github.com/user/repo/pkg.FuncName`
-    - 方法调用：`(*Type).Method` 和 `Type.Method`
-    - 泛型函数：`Func[T]` 和 `Func[T1, T2]`
-    - 闭包函数：`Func.func1`、`Func.func2` 等
-  - 支持表格、柱状图、饼图、热力图中的点击跳转
-  - 函数名高亮显示为可点击链接样式
-  - 详细的调试日志和错误提示
+#### Code Navigation Features
+  - Click function names in charts to jump directly to source code locations
+  - Smart function name matching: Supports various Go function name formats
+    - Package path functions: `github.com/user/repo/pkg.FuncName`
+    - Method calls: `(*Type).Method` and `Type.Method`
+    - Generic functions: `Func[T]` and `Func[T1, T2]`
+    - Closure functions: `Func.func1`, `Func.func2`, etc.
+  - Support for click-to-jump in tables, bar charts, pie charts, and heatmaps
+  - Function names highlighted as clickable link style
+  - Detailed debug logs and error messages
 
-#### Inlay Hints 性能提示
-  - 在源代码中显示函数性能数据
-  - 实时显示 CPU 使用率、内存占用等指标
-  - 可视化性能热点标记
+#### Inlay Hints Performance Tips
+  - Display function performance data in source code
+  - Real-time display of CPU usage, memory consumption, and other metrics
+  - Visual performance hotspot markers
 
-#### 图表可视化增强
-  - 四种图表类型：详细数据表格、柱状图、饼图、热力图
-  - 交互式悬停提示：显示详细的性能数据
-  - 标签页刷新功能：可以重新加载图表数据
-  - 响应式设计：支持窄窗口自适应布局
-  - 精简的视觉样式：去除过度装饰，注重数据展示
+#### Enhanced Chart Visualization
+  - Four chart types: Detailed data table, bar chart, pie chart, heatmap
+  - Interactive hover tooltips: Display detailed performance data
+  - Tab refresh functionality: Can reload chart data
+  - Responsive design: Supports narrow window adaptive layout
+  - Streamlined visual style: Removes excessive decoration, focuses on data presentation
 
-#### 示例代码和文档
-  - HTTP 服务模式示例
-  - 运行时采样模式示例（runtime_sampling_example.go）
-  - 手动采集模式示例
-  - 测试模式示例（test_sampling_example_test.go）
-  - 编译时插桩模式说明
-  - 详细的使用指南和文档
-  - 完整的示例代码覆盖所有采集模式
+#### Example Code and Documentation
+  - HTTP Service mode example
+  - Runtime Sampling mode example (runtime_sampling_example.go)
+  - Manual Collection mode example
+  - Test mode example (test_sampling_example_test.go)
+  - Compile-time Instrumentation mode description
+  - Detailed usage guides and documentation
+  - Complete example code covering all collection modes
 
-### 系统要求
+### System Requirements
 
-- GoLand 2025.2+ 或 IntelliJ IDEA 2025.2+ (需安装 Go 插件)
+- GoLand 2025.2+ or IntelliJ IDEA 2025.2+ (with Go plugin)
 - Go 1.16+
 - JVM 21+
 
-### 支持的平台
+### Supported Platforms
 
 - Windows
 - macOS
@@ -88,9 +86,9 @@ Pprof Plus 1.0.0 正式发布！这是一个功能完整的 Go 性能分析插�
 
 ## [Unreleased]
 
-### 计划功能
+### Planned Features
 
-- 更多可视化类型支持
-- 性能对比功能
-- 历史记录管理
-- 导出报告功能
+- More visualization type support
+- Performance comparison functionality
+- History management
+- Export report functionality

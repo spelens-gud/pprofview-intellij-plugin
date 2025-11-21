@@ -1,21 +1,22 @@
 package com.github.spelens.pprofview.runconfig
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.intellij.execution.configurations.ConfigurationFactory
 import com.intellij.execution.configurations.ConfigurationType
 import com.intellij.icons.AllIcons
 import javax.swing.Icon
 
 /**
- * Pprof 配置类型
+ * Pprof configuration type
  * 
- * 在"添加新配置"菜单中显示
+ * Displayed in "Add New Configuration" menu
  */
 class PprofConfigurationType : ConfigurationType {
     
-    override fun getDisplayName(): String = "Go Pprof"
+    override fun getDisplayName(): String = PprofViewBundle.message("pprof.configurationType.name")
     
     override fun getConfigurationTypeDescription(): String = 
-        "使用 pprof 进行 Go 程序性能分析"
+        PprofViewBundle.message("pprof.configurationType.description")
     
     override fun getIcon(): Icon = AllIcons.Actions.Profile
     

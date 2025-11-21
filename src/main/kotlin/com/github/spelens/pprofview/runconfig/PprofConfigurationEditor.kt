@@ -1,5 +1,6 @@
 package com.github.spelens.pprofview.runconfig
 
+import com.github.spelens.pprofview.PprofViewBundle
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.ui.ComboBox
@@ -11,41 +12,41 @@ import com.intellij.util.ui.JBUI
 import javax.swing.*
 
 /**
- * Pprof 配置编辑器
+ * Pprof configuration editor
  */
 class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     
-    // 基本配置
-    private val enablePprofCheckBox = JBCheckBox("启用 pprof 性能分析", true)
+    // Basic configuration
+    private val enablePprofCheckBox = JBCheckBox(PprofViewBundle.message("pprof.ui.enablePprof"), true)
     private val collectionModeComboBox = ComboBox(PprofCollectionMode.entries.toTypedArray())
     private val samplingModeComboBox = ComboBox(PprofSamplingMode.entries.toTypedArray())
     private val samplingIntervalField = JBTextField("60")
     private val testPatternField = JBTextField().apply {
-        toolTipText = "测试函数正则表达式，例如：^\\QTestIndexHandler\\E$ 表示运行 TestIndexHandler 测试函数"
+        toolTipText = "Test function regex, e.g.: ^\\QTestIndexHandler\\E$ to run TestIndexHandler test function"
     }
     
-    // 性能分析类型
-    private val cpuCheckBox = JBCheckBox("CPU 分析", true)
-    private val heapCheckBox = JBCheckBox("堆内存分析")
-    private val goroutineCheckBox = JBCheckBox("协程分析")
-    private val threadCreateCheckBox = JBCheckBox("线程创建分析")
-    private val blockCheckBox = JBCheckBox("阻塞分析")
-    private val mutexCheckBox = JBCheckBox("互斥锁分析")
-    private val allocsCheckBox = JBCheckBox("内存分配分析")
-    private val traceCheckBox = JBCheckBox("执行追踪")
+    // Profile types
+    private val cpuCheckBox = JBCheckBox(PprofProfileType.CPU.displayName, true)
+    private val heapCheckBox = JBCheckBox(PprofProfileType.HEAP.displayName)
+    private val goroutineCheckBox = JBCheckBox(PprofProfileType.GOROUTINE.displayName)
+    private val threadCreateCheckBox = JBCheckBox(PprofProfileType.THREAD_CREATE.displayName)
+    private val blockCheckBox = JBCheckBox(PprofProfileType.BLOCK.displayName)
+    private val mutexCheckBox = JBCheckBox(PprofProfileType.MUTEX.displayName)
+    private val allocsCheckBox = JBCheckBox(PprofProfileType.ALLOCS.displayName)
+    private val traceCheckBox = JBCheckBox(PprofProfileType.TRACE.displayName)
     
-    // 输出配置
+    // Output configuration
     private val outputDirectoryField = TextFieldWithBrowseButton()
-    private val autoOpenResultCheckBox = JBCheckBox("程序结束后自动打开分析结果", true)
+    private val autoOpenResultCheckBox = JBCheckBox(PprofViewBundle.message("pprof.config.autoOpenResult"), true)
     
-    // 采样配置
+    // Sampling configuration
     private val cpuDurationField = JBTextField("30")
     private val httpPortField = JBTextField("6060")
     private val memProfileRateField = JBTextField("524288")
     private val mutexProfileFractionField = JBTextField("1")
     private val blockProfileRateField = JBTextField("1")
     
-    // Go 程序配置
+    // Go program configuration
     private val runKindComboBox = ComboBox(PprofRunKind.entries.toTypedArray())
     private val fileField = TextFieldWithBrowseButton()
     private val directoryField = TextFieldWithBrowseButton()
@@ -55,11 +56,11 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     private val environmentVariablesField = JBTextField()
     private val goBuildFlagsField = JBTextField()
     
-    // 保存配置引用，用于智能填充
+    // Save configuration reference for smart auto-fill
     private var currentConfiguration: PprofConfiguration? = null
 
     init {
-        // 设置运行种类 ComboBox 渲染器
+        // Set run kind ComboBox renderer
         runKindComboBox.renderer = object : DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
                 list: JList<*>?,
@@ -76,13 +77,13 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
             }
         }
         
-        // 设置软件包 ComboBox 为可编辑
+        // Set package ComboBox as editable
         packageField.isEditable = true
         
-        // 配置文件选择器
+        // Configure file choosers
         val singleFileDescriptor = com.intellij.openapi.fileChooser.FileChooserDescriptor(
             true, false, false, false, false, false
-        ).withTitle("选择 Go 文件")
+        ).withTitle(PprofViewBundle.message("pprof.ui.selectGoFile"))
         
         fileField.addActionListener {
             val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
@@ -99,7 +100,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         
         directoryField.addActionListener {
             val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
-                singleFolderDescriptor.withTitle("选择目录"),
+                singleFolderDescriptor.withTitle(PprofViewBundle.message("pprof.ui.selectDirectory")),
                 null,
                 null
             )
@@ -108,7 +109,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         
         workingDirectoryField.addActionListener {
             val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
-                singleFolderDescriptor.withTitle("选择工作目录"),
+                singleFolderDescriptor.withTitle(PprofViewBundle.message("pprof.ui.selectWorkingDirectory")),
                 null,
                 null
             )
@@ -117,14 +118,14 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         
         outputDirectoryField.addActionListener {
             val chooser = com.intellij.openapi.fileChooser.FileChooser.chooseFile(
-                singleFolderDescriptor.withTitle("选择输出目录"),
+                singleFolderDescriptor.withTitle(PprofViewBundle.message("pprof.ui.selectOutputDirectory")),
                 null,
                 null
             )
             chooser?.let { outputDirectoryField.text = it.path }
         }
         
-        // 设置 ComboBox 渲染器
+        // Set ComboBox renderers
         collectionModeComboBox.renderer = object : DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
                 list: JList<*>?,
@@ -159,10 +160,10 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
 
     override fun createEditor(): JComponent {
-        // 创建性能分析类型面板
+        // Create profile types panel
         val profileTypesPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = BorderFactory.createTitledBorder("性能分析类型")
+            border = BorderFactory.createTitledBorder(PprofViewBundle.message("pprof.ui.profileTypes"))
             add(cpuCheckBox)
             add(heapCheckBox)
             add(goroutineCheckBox)
@@ -173,48 +174,48 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
             add(traceCheckBox)
         }
         
-        // 创建高级配置面板
+        // Create advanced configuration panel
         val advancedPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent("CPU 采样持续时间（秒）:", cpuDurationField)
-            .addLabeledComponent("HTTP 服务器端口:", httpPortField)
-            .addLabeledComponent("内存采样率（字节）:", memProfileRateField)
-            .addLabeledComponent("互斥锁采样率:", mutexProfileFractionField)
-            .addLabeledComponent("阻塞采样率:", blockProfileRateField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.cpuDuration") + ":", cpuDurationField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.httpPort") + ":", httpPortField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.memProfileRate") + ":", memProfileRateField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.mutexProfileFraction") + ":", mutexProfileFractionField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.blockProfileRate") + ":", blockProfileRateField)
             .panel
         
-        advancedPanel.border = BorderFactory.createTitledBorder("高级配置")
+        advancedPanel.border = BorderFactory.createTitledBorder(PprofViewBundle.message("pprof.ui.advancedConfig"))
         
-        // 创建运行配置面板
+        // Create run configuration panel
         val runConfigPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = BorderFactory.createTitledBorder("运行配置")
+            border = BorderFactory.createTitledBorder(PprofViewBundle.message("pprof.ui.runConfig"))
         }
         
-        // 添加运行种类选择和对应的输入框
+        // Add run kind selection and corresponding input fields
         val runKindPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent("运行种类:", runKindComboBox)
-            .addLabeledComponent("文件:", fileField)
-            .addLabeledComponent("目录:", directoryField)
-            .addLabeledComponent("软件包:", packageField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.runKind") + ":", runKindComboBox)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.file") + ":", fileField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.directory") + ":", directoryField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.package") + ":", packageField)
             .panel
         
         runConfigPanel.add(runKindPanel)
         
-        // 创建主面板
+        // Create main panel
         val panel = FormBuilder.createFormBuilder()
             .addComponent(runConfigPanel)
-            .addLabeledComponent("工作目录:", workingDirectoryField)
-            .addLabeledComponent("程序参数:", programArgumentsField)
-            .addLabeledComponent("环境变量:", environmentVariablesField)
-            .addLabeledComponent("Go 构建标志:", goBuildFlagsField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.workingDirectory") + ":", workingDirectoryField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.programArguments") + ":", programArgumentsField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.environmentVariables") + ":", environmentVariablesField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.goBuildFlags") + ":", goBuildFlagsField)
             .addSeparator()
             .addComponent(enablePprofCheckBox)
-            .addLabeledComponent("采集模式:", collectionModeComboBox)
-            .addLabeledComponent("采样模式:", samplingModeComboBox)
-            .addLabeledComponent("采样间隔（秒）:", samplingIntervalField)
-            .addLabeledComponent("测试模式选项:", testPatternField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.collectionMode") + ":", collectionModeComboBox)
+            .addLabeledComponent(PprofViewBundle.message("pprof.samplingMode.single") + ":", samplingModeComboBox)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.samplingInterval") + ":", samplingIntervalField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.ui.testPattern") + ":", testPatternField)
             .addComponent(profileTypesPanel)
-            .addLabeledComponent("输出目录:", outputDirectoryField)
+            .addLabeledComponent(PprofViewBundle.message("pprof.config.outputDirectory") + ":", outputDirectoryField)
             .addComponent(autoOpenResultCheckBox)
             .addComponent(advancedPanel)
             .addComponentFillVertically(JPanel(), 0)
@@ -222,17 +223,17 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         
         panel.border = JBUI.Borders.empty(10)
         
-        // 添加运行种类变化监听器
+        // Add run kind change listener
         runKindComboBox.addActionListener {
             onRunKindChanged()
         }
         
-        // 添加采集模式变化监听器
+        // Add collection mode change listener
         collectionModeComboBox.addActionListener {
             onCollectionModeChanged()
         }
         
-        // 添加工作目录变化监听器
+        // Add working directory change listener
         workingDirectoryField.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
             override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = onWorkingDirectoryChanged()
             override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = onWorkingDirectoryChanged()
@@ -243,10 +244,10 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
 
     override fun resetEditorFrom(configuration: PprofConfiguration) {
-        // 保存配置引用
+        // Save configuration reference
         currentConfiguration = configuration
         
-        // 运行配置
+        // Run configuration
         val runKind = PprofRunKind.fromString(configuration.runKind)
         runKindComboBox.selectedItem = runKind
         
@@ -258,7 +259,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         environmentVariablesField.text = configuration.environmentVariables
         goBuildFlagsField.text = configuration.goBuildFlags
         
-        // 初始化智能选项
+        // Initialize smart options
         initializeSmartOptions(configuration)
         
         enablePprofCheckBox.isSelected = configuration.enablePprof
@@ -271,7 +272,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         samplingIntervalField.text = configuration.samplingInterval.toString()
         testPatternField.text = configuration.testPattern
         
-        // 重置性能分析类型
+        // Reset profile types
         val selectedTypes = configuration.profileTypes.split(",").toSet()
         cpuCheckBox.isSelected = PprofProfileType.CPU.name in selectedTypes
         heapCheckBox.isSelected = PprofProfileType.HEAP.name in selectedTypes
@@ -291,13 +292,13 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         mutexProfileFractionField.text = configuration.mutexProfileFraction.toString()
         blockProfileRateField.text = configuration.blockProfileRate.toString()
         
-        // 更新字段可用性
+        // Update field availability
         onCollectionModeChanged()
         updateRunKindFields()
     }
 
     override fun applyEditorTo(configuration: PprofConfiguration) {
-        // 运行配置
+        // Run configuration
         configuration.runKind = (runKindComboBox.selectedItem as? PprofRunKind)?.name ?: PprofRunKind.FILE.name
         configuration.filePath = fileField.text
         configuration.directoryPath = directoryField.text
@@ -307,7 +308,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         configuration.environmentVariables = environmentVariablesField.text
         configuration.goBuildFlags = goBuildFlagsField.text
         
-        // Pprof 配置
+        // Pprof configuration
         configuration.enablePprof = enablePprofCheckBox.isSelected
         configuration.collectionMode = (collectionModeComboBox.selectedItem as? PprofCollectionMode)?.name
             ?: PprofCollectionMode.RUNTIME_SAMPLING.name
@@ -316,7 +317,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         configuration.samplingInterval = samplingIntervalField.text.toIntOrNull() ?: 60
         configuration.testPattern = testPatternField.text
         
-        // 收集选中的性能分析类型
+        // Collect selected profile types
         val selectedTypes = mutableListOf<String>()
         if (cpuCheckBox.isSelected) selectedTypes.add(PprofProfileType.CPU.name)
         if (heapCheckBox.isSelected) selectedTypes.add(PprofProfileType.HEAP.name)
@@ -339,7 +340,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 初始化智能选项
+     * Initialize smart options
      */
     private fun initializeSmartOptions(configuration: PprofConfiguration) {
         val workingDir = configuration.workingDirectory.ifEmpty { 
@@ -347,18 +348,18 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         }
         
         if (workingDir.isNotEmpty()) {
-            // 自动填充工作目录
+            // Auto-fill working directory
             if (workingDirectoryField.text.isEmpty()) {
                 workingDirectoryField.text = workingDir
             }
             
-            // 根据运行种类填充默认值
+            // Fill default values based on run kind
             updateSmartDefaults(workingDir)
         }
     }
     
     /**
-     * 运行种类变化时的响应
+     * Response when run kind changes
      */
     private fun onRunKindChanged() {
         updateRunKindFields()
@@ -370,44 +371,44 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 采集模式变化时的响应
+     * Response when collection mode changes
      */
     private fun onCollectionModeChanged() {
         val collectionMode = collectionModeComboBox.selectedItem as? PprofCollectionMode
         val isTestMode = collectionMode == PprofCollectionMode.TEST_SAMPLING
         val isHttpMode = collectionMode == PprofCollectionMode.HTTP_SERVER
         
-        // 测试模式选项只在测试时采样模式下可用
+        // Test pattern field is only available in test sampling mode
         testPatternField.isEnabled = isTestMode
         
-        // 采样模式和采样间隔在测试模式下不可用（测试模式使用 go test 的参数）
+        // Sampling mode and interval are not available in test mode (test mode uses go test parameters)
         samplingModeComboBox.isEnabled = !isTestMode && !isHttpMode
         samplingIntervalField.isEnabled = !isTestMode && !isHttpMode
         
-        // HTTP 端口只在 HTTP 服务模式下可用
+        // HTTP port is only available in HTTP server mode
         httpPortField.isEnabled = isHttpMode
         
-        // 性能分析类型的可用性
+        // Profile type availability
         if (isTestMode) {
-            // 测试模式：go test 只支持以下参数
+            // Test mode: go test only supports the following parameters
             cpuCheckBox.isEnabled = true          // -cpuprofile
             heapCheckBox.isEnabled = true         // -memprofile
             blockCheckBox.isEnabled = true        // -blockprofile
             mutexCheckBox.isEnabled = true        // -mutexprofile
             
-            // go test 不支持的类型
+            // Types not supported by go test
             goroutineCheckBox.isEnabled = false
             threadCreateCheckBox.isEnabled = false
             allocsCheckBox.isEnabled = false
             traceCheckBox.isEnabled = false
             
-            // 取消勾选不支持的类型
+            // Uncheck unsupported types
             goroutineCheckBox.isSelected = false
             threadCreateCheckBox.isSelected = false
             allocsCheckBox.isSelected = false
             traceCheckBox.isSelected = false
         } else {
-            // 运行时采样和 HTTP 服务模式：所有类型都可用
+            // Runtime sampling and HTTP server mode: all types available
             cpuCheckBox.isEnabled = true
             heapCheckBox.isEnabled = true
             goroutineCheckBox.isEnabled = true
@@ -420,7 +421,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 工作目录变化时的响应
+     * Response when working directory changes
      */
     private fun onWorkingDirectoryChanged() {
         val workingDir = workingDirectoryField.text
@@ -430,7 +431,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 更新智能默认值
+     * Update smart defaults
      */
     private fun updateSmartDefaults(workingDir: String) {
         val runKind = runKindComboBox.selectedItem as? PprofRunKind ?: PprofRunKind.FILE
@@ -442,7 +443,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         
         when (runKind) {
             PprofRunKind.FILE -> {
-                // 自动查找 main.go 文件
+                // Auto-find main.go file
                 if (fileField.text.isEmpty()) {
                     val mainFile = findMainGoFile(workingDirFile)
                     if (mainFile != null) {
@@ -451,29 +452,29 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
                 }
             }
             PprofRunKind.DIRECTORY -> {
-                // 自动设置为工作目录
+                // Auto-set to working directory
                 if (directoryField.text.isEmpty()) {
                     directoryField.text = workingDir
                 }
             }
             PprofRunKind.PACKAGE -> {
-                // 自动读取 go.mod 获取包列表
+                // Auto-read go.mod to get package list
                 updatePackageList(workingDirFile)
             }
         }
     }
     
     /**
-     * 查找 main.go 文件
+     * Find main.go file
      */
     private fun findMainGoFile(directory: java.io.File): java.io.File? {
-        // 首先查找 main.go
+        // First look for main.go
         val mainGo = java.io.File(directory, "main.go")
         if (mainGo.exists() && mainGo.isFile) {
             return mainGo
         }
         
-        // 查找任何包含 main 函数的 .go 文件
+        // Find any .go file containing main function
         val goFiles = directory.listFiles { file ->
             file.isFile && file.name.endsWith(".go") && !file.name.endsWith("_test.go")
         } ?: return null
@@ -485,7 +486,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
                     return file
                 }
             } catch (e: Exception) {
-                // 忽略读取错误
+                // Ignore read errors
             }
         }
         
@@ -493,12 +494,12 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 更新软件包列表
+     * Update package list
      */
     private fun updatePackageList(directory: java.io.File) {
         val packages = mutableListOf<String>()
         
-        // 读取 go.mod 获取模块路径
+        // Read go.mod to get module path
         val goModFile = java.io.File(directory, "go.mod")
         if (goModFile.exists()) {
             try {
@@ -509,19 +510,19 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
                     val modulePath = match.groupValues[1]
                     packages.add(modulePath)
                     
-                    // 查找子包
+                    // Find sub-packages
                     findSubPackages(directory, modulePath, packages)
                 }
             } catch (e: Exception) {
-                // 忽略读取错误
+                // Ignore read errors
             }
         }
         
-        // 更新下拉列表
+        // Update dropdown list
         packageField.removeAllItems()
         packages.forEach { packageField.addItem(it) }
         
-        // 如果当前值不在列表中，添加它
+        // If current value is not in list, add it
         val currentValue = currentConfiguration?.packagePath
         if (!currentValue.isNullOrEmpty() && !packages.contains(currentValue)) {
             packageField.addItem(currentValue)
@@ -530,7 +531,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
     }
     
     /**
-     * 查找子包
+     * Find sub-packages
      */
     private fun findSubPackages(directory: java.io.File, modulePath: String, packages: MutableList<String>) {
         val subdirs = directory.listFiles { file -> 
@@ -538,7 +539,7 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
         } ?: return
         
         for (subdir in subdirs) {
-            // 检查是否包含 .go 文件
+            // Check if contains .go files
             val hasGoFiles = subdir.listFiles { file ->
                 file.isFile && file.name.endsWith(".go") && !file.name.endsWith("_test.go")
             }?.isNotEmpty() ?: false
@@ -548,13 +549,13 @@ class PprofConfigurationEditor : SettingsEditor<PprofConfiguration>() {
                 packages.add("$modulePath/$relativePath")
             }
             
-            // 递归查找子目录
+            // Recursively find subdirectories
             findSubPackages(subdir, modulePath, packages)
         }
     }
     
     /**
-     * 根据运行种类更新输入框的可用性
+     * Update input field availability based on run kind
      */
     private fun updateRunKindFields() {
         val runKind = runKindComboBox.selectedItem as? PprofRunKind ?: PprofRunKind.FILE

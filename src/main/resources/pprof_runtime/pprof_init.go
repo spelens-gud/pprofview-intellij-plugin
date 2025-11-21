@@ -27,45 +27,45 @@ var (
 func init() {	
 	outputDir := os.Getenv("PPROF_OUTPUT_DIR")
 	if outputDir == "" {
-		log.Println("[pprofview] 未设置 PPROF_OUTPUT_DIR 环境变量，跳过 pprof 采集")
+		log.Println("[pprofview] PPROF_OUTPUT_DIR environment variable not set, skipping pprof collection")
 		return
 	}
 	
 	pprofOutputDir = outputDir
-	// 确保输出目录存在
+	// Ensure output directory exists
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		log.Printf("[pprofview] 无法创建输出目录: %v", err)
+		log.Printf("[pprofview] Cannot create output directory: %v", err)
 		return
 	}
 	
-	// 设置采样率
+	// Set sampling rates
 	if memRateStr := os.Getenv("PPROF_MEM_RATE"); memRateStr != "" {
 		if memRate, err := strconv.Atoi(memRateStr); err == nil && memRate > 0 {
 			runtime.MemProfileRate = memRate
-			log.Printf("[pprofview] 内存采样率: %d", memRate)
+			log.Printf("[pprofview] Memory profile rate: %d", memRate)
 		}
 	}
 	
 	if blockRateStr := os.Getenv("PPROF_BLOCK_RATE"); blockRateStr != "" {
 		if blockRate, err := strconv.Atoi(blockRateStr); err == nil && blockRate > 0 {
 			runtime.SetBlockProfileRate(blockRate)
-			log.Printf("[pprofview] 阻塞采样率: %d", blockRate)
+			log.Printf("[pprofview] Block profile rate: %d", blockRate)
 		}
 	}
 	
 	if mutexFractionStr := os.Getenv("PPROF_MUTEX_FRACTION"); mutexFractionStr != "" {
 		if mutexFraction, err := strconv.Atoi(mutexFractionStr); err == nil && mutexFraction > 0 {
 			runtime.SetMutexProfileFraction(mutexFraction)
-			log.Printf("[pprofview] 互斥锁采样率: %d", mutexFraction)
+			log.Printf("[pprofview] Mutex profile rate: %d", mutexFraction)
 		}
 	}
 	
-	// CPU 分析
+	// CPU profiling
 	if os.Getenv("PPROF_ENABLE_CPU") == "true" {
 		cpuFilePath := filepath.Join(outputDir, "cpu.pprof")
 		f, err := os.Create(cpuFilePath)
 		if err != nil {
-			log.Printf("[pprofview] 无法创建 CPU profile 文件: %v", err)
+			log.Printf("[pprofview] Cannot create CPU profile file: %v", err)
 		} else {
 			if err := pprof.StartCPUProfile(f); err != nil {
 				f.Close()
@@ -75,12 +75,12 @@ func init() {
 		}
 	}
 	
-	// 执行追踪
+	// Execution trace
 	if os.Getenv("PPROF_ENABLE_TRACE") == "true" {
 		traceFilePath := filepath.Join(outputDir, "trace.out")
 		f, err := os.Create(traceFilePath)
 		if err != nil {
-			log.Printf("[pprofview] 无法创建 trace 文件: %v", err)
+			log.Printf("[pprofview] Cannot create trace file: %v", err)
 		} else {
 			if err := trace.Start(f); err != nil {
 				f.Close()
@@ -90,37 +90,37 @@ func init() {
 		}
 	}
 	
-	// 设置清理函数
+	// Set cleanup function
 	pprofCleanupFunc = func() {
-		log.Println("[pprofview] 开始保存 pprof 数据...")
+		log.Println("[pprofview] Saving pprof data...")
 		if pprofCpuFile != nil {
 			pprof.StopCPUProfile()
 			pprofCpuFile.Close()
-			log.Printf("[pprofview] CPU profiling 已完成")
+			log.Printf("[pprofview] CPU profiling completed")
 		}
 		if pprofTraceFile != nil {
 			trace.Stop()
 			pprofTraceFile.Close()
-			log.Printf("[pprofview] Trace 已完成")
+			log.Printf("[pprofview] Trace completed")
 		}
 		writePprofProfiles(pprofOutputDir)
-		log.Println("[pprofview] 所有 pprof 数据已保存")
+		log.Println("[pprofview] All pprof data saved")
 	}
 	
-	// 捕获中断信号
+	// Capture interrupt signals
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	
 	go func() {
 		<-sigChan
-		log.Println("[pprofview] 收到退出信号，正在保存 pprof 数据...")
+		log.Println("[pprofview] Received exit signal, saving pprof data...")
 		if pprofCleanupFunc != nil {
 			pprofCleanupFunc()
 		}
 		os.Exit(0)
 	}()
 	
-	// 获取采样配置
+	// Get sampling configuration
 	cpuDuration := 30
 	if durationStr := os.Getenv("PPROF_CPU_DURATION"); durationStr != "" {
 		if d, err := strconv.Atoi(durationStr); err == nil && d > 0 {
@@ -136,23 +136,23 @@ func init() {
 		}
 	}
 	
-	log.Printf("[pprofview] CPU 采样持续时间: %d 秒", cpuDuration)
-	log.Printf("[pprofview] 采样模式: %s", samplingMode)
+	log.Printf("[pprofview] CPU sampling duration: %d seconds", cpuDuration)
+	log.Printf("[pprofview] Sampling mode: %s", samplingMode)
 	
-	// 根据采样模式启动不同的采样逻辑
+	// Start different sampling logic based on sampling mode
 	if samplingMode == "LOOP" {
-		log.Printf("[pprofview] 循环采样间隔: %d 秒", samplingInterval)
+		log.Printf("[pprofview] Loop sampling interval: %d seconds", samplingInterval)
 		startLoopSampling(cpuDuration, samplingInterval)
 	} else {
 		startSingleSampling(cpuDuration)
 	}
 }
 
-// startSingleSampling 单次采样模式
+// startSingleSampling Single sampling mode
 func startSingleSampling(cpuDuration int) {
 	go func() {
 		time.Sleep(time.Duration(cpuDuration) * time.Second)
-		log.Println("[pprofview] 采样时间到，保存 pprof 数据...")
+		log.Println("[pprofview] Sampling timeout, saving pprof data...")
 		if pprofCleanupFunc != nil {
 			pprofCleanupFunc()
 			pprofCleanupFunc = nil
@@ -160,67 +160,67 @@ func startSingleSampling(cpuDuration int) {
 	}()
 }
 
-// startLoopSampling 循环采样模式
+// startLoopSampling Loop sampling mode
 func startLoopSampling(cpuDuration int, interval int) {
 	go func() {
 		sampleCount := 0
 		for {
 			sampleCount++
-			log.Printf("[pprofview] 开始第 %d 次采样...", sampleCount)
+			log.Printf("[pprofview] Starting sample #%d...", sampleCount)
 			
-			// 等待采样时间
+			// Wait for sampling duration
 			time.Sleep(time.Duration(cpuDuration) * time.Second)
 			
-			log.Printf("[pprofview] 第 %d 次采样完成，保存数据...", sampleCount)
+			log.Printf("[pprofview] Sample #%d completed, saving data...", sampleCount)
 			
-			// 保存当前采样数据
+			// Save current sampling data
 			if pprofCleanupFunc != nil {
 				pprofCleanupFunc()
 			}
 			
-			log.Printf("[pprofview] 等待 %d 秒后开始下一次采样...", interval)
+			log.Printf("[pprofview] Waiting %d seconds before next sample...", interval)
 			
-			// 等待采样间隔
+			// Wait for sampling interval
 			time.Sleep(time.Duration(interval) * time.Second)
 			
-			// 重新启动 CPU profiling 和 trace（如果启用）
+			// Restart CPU profiling and trace (if enabled)
 			restartProfiling()
 		}
 	}()
 }
 
-// restartProfiling 重新启动 profiling
+// restartProfiling Restart profiling
 func restartProfiling() {
-	// 重新启动 CPU profiling
+	// Restart CPU profiling
 	if os.Getenv("PPROF_ENABLE_CPU") == "true" && pprofOutputDir != "" {
 		cpuFilePath := filepath.Join(pprofOutputDir, fmt.Sprintf("cpu_%d.pprof", time.Now().Unix()))
 		f, err := os.Create(cpuFilePath)
 		if err != nil {
-			log.Printf("[pprofview] 无法创建 CPU profile 文件: %v", err)
+			log.Printf("[pprofview] Cannot create CPU profile file: %v", err)
 		} else {
 			if err := pprof.StartCPUProfile(f); err != nil {
-				log.Printf("[pprofview] 无法启动 CPU profiling: %v", err)
+				log.Printf("[pprofview] Cannot start CPU profiling: %v", err)
 				f.Close()
 			} else {
 				pprofCpuFile = f
-				log.Printf("[pprofview] CPU profiling 已重新启动: %s", cpuFilePath)
+				log.Printf("[pprofview] CPU profiling restarted: %s", cpuFilePath)
 			}
 		}
 	}
 	
-	// 重新启动 trace
+	// Restart trace
 	if os.Getenv("PPROF_ENABLE_TRACE") == "true" && pprofOutputDir != "" {
 		traceFilePath := filepath.Join(pprofOutputDir, fmt.Sprintf("trace_%d.out", time.Now().Unix()))
 		f, err := os.Create(traceFilePath)
 		if err != nil {
-			log.Printf("[pprofview] 无法创建 trace 文件: %v", err)
+			log.Printf("[pprofview] Cannot create trace file: %v", err)
 		} else {
 			if err := trace.Start(f); err != nil {
-				log.Printf("[pprofview] 无法启动 trace: %v", err)
+				log.Printf("[pprofview] Cannot start trace: %v", err)
 				f.Close()
 			} else {
 				pprofTraceFile = f
-				log.Printf("[pprofview] Trace 已重新启动: %s", traceFilePath)
+				log.Printf("[pprofview] Trace restarted: %s", traceFilePath)
 			}
 		}
 	}
@@ -228,77 +228,77 @@ func restartProfiling() {
 
 
 
-// writePprofProfiles 写入其他类型的 profile
+// writePprofProfiles Write other types of profiles
 func writePprofProfiles(outputDir string) {
-	// 堆内存分析
+	// Heap profiling
 	if os.Getenv("PPROF_ENABLE_HEAP") == "true" {
 		heapFile := filepath.Join(outputDir, "heap.pprof")
 		f, err := os.Create(heapFile)
 		if err == nil {
 			runtime.GC()
 			if err := pprof.WriteHeapProfile(f); err == nil {
-				log.Printf("[pprofview] 堆内存 profiling 已完成: %s", heapFile)
+				log.Printf("[pprofview] Heap profiling completed: %s", heapFile)
 			}
 			f.Close()
 		}
 	}
 	
-	// 协程分析
+	// Goroutine profiling
 	if os.Getenv("PPROF_ENABLE_GOROUTINE") == "true" {
 		goroutineFile := filepath.Join(outputDir, "goroutine.pprof")
 		f, err := os.Create(goroutineFile)
 		if err == nil {
 			if err := pprof.Lookup("goroutine").WriteTo(f, 0); err == nil {
-				log.Printf("[pprofview] 协程 profiling 已完成: %s", goroutineFile)
+				log.Printf("[pprofview] Goroutine profiling completed: %s", goroutineFile)
 			}
 			f.Close()
 		}
 	}
 	
-	// 阻塞分析
+	// Block profiling
 	if os.Getenv("PPROF_ENABLE_BLOCK") == "true" {
 		blockFile := filepath.Join(outputDir, "block.pprof")
 		f, err := os.Create(blockFile)
 		if err == nil {
 			if err := pprof.Lookup("block").WriteTo(f, 0); err == nil {
-				log.Printf("[pprofview] 阻塞 profiling 已完成: %s", blockFile)
+				log.Printf("[pprofview] Block profiling completed: %s", blockFile)
 			}
 			f.Close()
 		}
 	}
 	
-	// 互斥锁分析
+	// Mutex profiling
 	if os.Getenv("PPROF_ENABLE_MUTEX") == "true" {
 		mutexFile := filepath.Join(outputDir, "mutex.pprof")
 		f, err := os.Create(mutexFile)
 		if err == nil {
 			if err := pprof.Lookup("mutex").WriteTo(f, 0); err == nil {
-				log.Printf("[pprofview] 互斥锁 profiling 已完成: %s", mutexFile)
+				log.Printf("[pprofview] Mutex profiling completed: %s", mutexFile)
 			}
 			f.Close()
 		}
 	}
 	
-	// 内存分配分析
+	// Allocations profiling
 	if os.Getenv("PPROF_ENABLE_ALLOCS") == "true" {
 		allocsFile := filepath.Join(outputDir, "allocs.pprof")
 		f, err := os.Create(allocsFile)
 		if err == nil {
 			runtime.GC()
 			if err := pprof.Lookup("allocs").WriteTo(f, 0); err == nil {
-				log.Printf("[pprofview] 内存分配 profiling 已完成: %s", allocsFile)
+				log.Printf("[pprofview] Allocations profiling completed: %s", allocsFile)
 			}
 			f.Close()
 		}
 	}
 	
-	// 线程创建分析
+	// Thread creation profiling
 	if os.Getenv("PPROF_ENABLE_THREADCREATE") == "true" {
 		threadCreateFile := filepath.Join(outputDir, "threadcreate.pprof")
 		f, err := os.Create(threadCreateFile)
 		if err == nil {
 			if err := pprof.Lookup("threadcreate").WriteTo(f, 0); err == nil {
-				log.Printf("[pprofview] 线程创建 profiling 已完成: %s", threadCreateFile)
+				log.Printf("[pprofview] Thread creation profiling completed: %s", threadCreateFile)
 			}
 			f.Close()
 		}

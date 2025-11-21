@@ -20,7 +20,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import java.io.File
 
 /**
- * Pprof 运行状态
+ * Pprof run state
  */
 class PprofRunState(
     environment: ExecutionEnvironment,
@@ -30,13 +30,13 @@ class PprofRunState(
     override fun startProcess(): ProcessHandler {
         val logger = thisLogger()
         
-        // 清除 Pprof Plus: Visual Analytics 窗口的旧数据
+        // Clear old data from Pprof Plus: Visual Analytics window
         clearPprofOutput()
         
         val collectionMode = PprofCollectionMode.fromString(configuration.collectionMode)
-        logger.info("采集模式: $collectionMode")
+        logger.info("Collection mode: $collectionMode")
         
-        // 根据采集模式选择不同的启动方式
+        // Choose different startup methods based on collection mode
         return when (collectionMode) {
             PprofCollectionMode.RUNTIME_SAMPLING -> startWithRuntimeSampling()
             PprofCollectionMode.HTTP_SERVER -> startWithHttpServer()
@@ -45,17 +45,17 @@ class PprofRunState(
     }
     
     /**
-     * 使用 HTTP 服务模式启动
+     * Start with HTTP server mode
      */
     private fun startWithHttpServer(): ProcessHandler {
         val logger = thisLogger()
-        logger.info("使用 HTTP 服务模式")
+        logger.info("Using HTTP server mode")
         
         val commandLine = GeneralCommandLine()
         commandLine.exePath = "go"
         commandLine.addParameter("run")
         
-        // 添加构建标志
+        // Add build flags
         if (configuration.goBuildFlags.isNotEmpty()) {
             configuration.goBuildFlags.split(" ").forEach { flag ->
                 if (flag.isNotBlank()) {
@@ -64,85 +64,85 @@ class PprofRunState(
             }
         }
         
-        // 根据运行种类添加参数
+        // Add parameters based on run kind
         val runKind = PprofRunKind.fromString(configuration.runKind)
-        logger.info("运行种类: $runKind")
+        logger.info("Run kind: $runKind")
         when (runKind) {
             PprofRunKind.FILE -> {
                 if (configuration.filePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.filePath)
-                    logger.info("文件路径: ${configuration.filePath}")
+                    logger.info("File path: ${configuration.filePath}")
                 }
             }
             PprofRunKind.DIRECTORY -> {
                 if (configuration.directoryPath.isNotEmpty()) {
                     commandLine.addParameter(configuration.directoryPath)
-                    logger.info("目录路径: ${configuration.directoryPath}")
+                    logger.info("Directory path: ${configuration.directoryPath}")
                 }
             }
             PprofRunKind.PACKAGE -> {
                 if (configuration.packagePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.packagePath)
-                    logger.info("包路径: ${configuration.packagePath}")
+                    logger.info("Package path: ${configuration.packagePath}")
                 }
             }
         }
         
-        // 注入 HTTP 服务初始化文件
+        // Inject HTTP server initialization file
         var pprofHttpFile: File? = null
-        logger.info("注入 pprof HTTP 服务初始化文件...")
+        logger.info("Injecting pprof HTTP server initialization file...")
         pprofHttpFile = injectPprofHttpInit()
         if (pprofHttpFile != null) {
             commandLine.addParameter(pprofHttpFile.absolutePath)
-            logger.info("已注入 pprof HTTP 初始化文件: ${pprofHttpFile.absolutePath}")
+            logger.info("Injected pprof HTTP initialization file: ${pprofHttpFile.absolutePath}")
         } else {
-            logger.warn("注入 pprof HTTP 初始化文件失败")
+            logger.warn("Failed to inject pprof HTTP initialization file")
         }
         
         if (configuration.workingDirectory.isNotEmpty()) {
             commandLine.setWorkDirectory(configuration.workingDirectory)
         }
         
-        // 添加程序参数
+        // Add program arguments
         if (configuration.programArguments.isNotEmpty()) {
             commandLine.addParameters(configuration.programArguments.split(" "))
         }
         
-        // 添加环境变量
+        // Add environment variables
         addEnvironmentVariables(commandLine)
         
-        // 设置 HTTP 端口环境变量
+        // Set HTTP port environment variable
         commandLine.environment["PPROF_HTTP_PORT"] = configuration.httpPort.toString()
         
-        // 打印完整的命令行用于调试
-        logger.info("执行命令: ${commandLine.commandLineString}")
-        logger.info("工作目录: ${commandLine.workDirectory}")
+        // Print complete command line for debugging
+        logger.info("Execute command: ${commandLine.commandLineString}")
+        logger.info("Working directory: ${commandLine.workDirectory}")
         
         val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         
-        // 监听输出，显示 pprof HTTP 服务地址
+        // Listen to output, display pprof HTTP service address
         processHandler.addProcessListener(object : ProcessListener {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 val text = event.text
-                // 检测 pprof HTTP 服务启动信息
+                // Detect pprof HTTP service startup info
                 if (text.contains("[pprofview-http]")) {
-                    logger.info("检测到 pprof HTTP 服务信息: $text")
+                    logger.info("Detected pprof HTTP service info: $text")
                 }
             }
             
             override fun processTerminated(event: ProcessEvent) {
-                logger.info("HTTP 服务进程已终止，退出码: ${event.exitCode}")
-                // 清理临时文件
+                logger.info("HTTP service process terminated, exit code: ${event.exitCode}")
+                // Clean up temporary files
                 pprofHttpFile?.delete()
             }
         })
         
-        // 在控制台输出提示信息
+        // Output prompt information to console
         processHandler.notifyTextAvailable(
-            "[pprofview] HTTP 服务模式已启动\n" +
-            "[pprofview] pprof 数据将通过 HTTP 服务提供\n" +
-            "[pprofview] 默认地址: http://localhost:${configuration.httpPort}/debug/pprof/\n",
+            "[pprofview] HTTP service mode started\n" +
+            "[pprofview] pprof data will be provided via HTTP service\n" +
+            "[pprofview] Default address: http://localhost:${configuration.httpPort}/debug/pprof/\n",
             ProcessOutputTypes.SYSTEM
         )
         
@@ -154,7 +154,7 @@ class PprofRunState(
      */
     private fun startWithTestSampling(): ProcessHandler {
         val logger = thisLogger()
-        logger.info("使用测试时采样模式")
+        logger.info("Using test sampling mode")
         
         val outputDir = getOutputDirectory()
         cleanOldPprofFiles(outputDir)
@@ -163,7 +163,7 @@ class PprofRunState(
         commandLine.exePath = "go"
         commandLine.addParameter("test")
         
-        // 添加构建标志
+        // Add build flags
         if (configuration.goBuildFlags.isNotEmpty()) {
             configuration.goBuildFlags.split(" ").forEach { flag ->
                 if (flag.isNotBlank()) {
@@ -172,62 +172,62 @@ class PprofRunState(
             }
         }
         
-        // 根据运行种类添加参数
+        // Add parameters based on run kind
         val runKind = PprofRunKind.fromString(configuration.runKind)
-        logger.info("运行种类: $runKind")
+        logger.info("Run kind: $runKind")
         when (runKind) {
             PprofRunKind.FILE -> {
-                // go test 不支持单个文件，使用目录
+                // go test doesn't support single files, use directory
                 if (configuration.filePath.isNotEmpty()) {
                     val dir = File(configuration.filePath).parent
                     if (dir != null) {
                         commandLine.addParameter(dir)
-                        logger.info("测试目录: $dir")
+                        logger.info("Test directory: $dir")
                     }
                 }
             }
             PprofRunKind.DIRECTORY -> {
                 if (configuration.directoryPath.isNotEmpty()) {
                     commandLine.addParameter(configuration.directoryPath)
-                    logger.info("测试目录: ${configuration.directoryPath}")
+                    logger.info("Test directory: ${configuration.directoryPath}")
                 }
             }
             PprofRunKind.PACKAGE -> {
                 if (configuration.packagePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.packagePath)
-                    logger.info("测试包: ${configuration.packagePath}")
+                    logger.info("Test package: ${configuration.packagePath}")
                 }
             }
         }
         
-        // 添加测试模式选项（支持正则表达式）
+        // Add test mode options (supports regex)
         if (configuration.testPattern.isNotEmpty()) {
             commandLine.addParameter("-run=${configuration.testPattern}")
-            logger.info("测试模式选项: ${configuration.testPattern}")
+            logger.info("Test mode option: ${configuration.testPattern}")
         }
         
-        // 添加 CPU profile 参数
+        // Add CPU profile parameter
         if (configuration.profileTypes.contains(PprofProfileType.CPU.name)) {
             val cpuProfilePath = File(outputDir, "cpu.pprof").absolutePath
             commandLine.addParameter("-cpuprofile=$cpuProfilePath")
             logger.info("CPU profile 输出: $cpuProfilePath")
         }
         
-        // 添加内存 profile 参数
+        // Add memory profile parameter
         if (configuration.profileTypes.contains(PprofProfileType.HEAP.name)) {
             val memProfilePath = File(outputDir, "mem.pprof").absolutePath
             commandLine.addParameter("-memprofile=$memProfilePath")
             logger.info("Memory profile 输出: $memProfilePath")
         }
         
-        // 添加阻塞 profile 参数
+        // Add block profile parameter
         if (configuration.profileTypes.contains(PprofProfileType.BLOCK.name)) {
             val blockProfilePath = File(outputDir, "block.pprof").absolutePath
             commandLine.addParameter("-blockprofile=$blockProfilePath")
             logger.info("Block profile 输出: $blockProfilePath")
         }
         
-        // 添加互斥锁 profile 参数
+        // Add mutex profile parameter
         if (configuration.profileTypes.contains(PprofProfileType.MUTEX.name)) {
             val mutexProfilePath = File(outputDir, "mutex.pprof").absolutePath
             commandLine.addParameter("-mutexprofile=$mutexProfilePath")
@@ -238,28 +238,28 @@ class PprofRunState(
             commandLine.setWorkDirectory(configuration.workingDirectory)
         }
         
-        // 添加程序参数
+        // Add program arguments
         if (configuration.programArguments.isNotEmpty()) {
             commandLine.addParameters(configuration.programArguments.split(" "))
         }
         
-        // 添加环境变量
+        // Add environment variables
         addEnvironmentVariables(commandLine)
         
-        // 打印完整的命令行用于调试
-        logger.info("执行命令: ${commandLine.commandLineString}")
-        logger.info("工作目录: ${commandLine.workDirectory}")
+        // Print complete command line for debugging
+        logger.info("Execute command: ${commandLine.commandLineString}")
+        logger.info("Working directory: ${commandLine.workDirectory}")
         
         val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         
-        // 如果启用了自动打开结果，监控进程终止
+        // If auto-open result is enabled, monitor process termination
         if (configuration.autoOpenResult) {
-            logger.info("将在测试结束后进行可视化，输出目录: ${outputDir.absolutePath}")
+            logger.info("Will visualize after test completion, output directory: ${outputDir.absolutePath}")
             
             processHandler.addProcessListener(object : ProcessListener {
                 override fun processTerminated(event: ProcessEvent) {
-                    logger.info("测试进程已终止，退出码: ${event.exitCode}")
+                    logger.info("Test process terminated, exit code: ${event.exitCode}")
                     
                     // 测试结束后自动打开可视化
                     Thread {
@@ -278,13 +278,13 @@ class PprofRunState(
      */
     private fun startWithRuntimeSampling(): ProcessHandler {
         val logger = thisLogger()
-        logger.info("使用运行时采样模式")
+        logger.info("Using runtime sampling mode")
         
         val commandLine = GeneralCommandLine()
         commandLine.exePath = "go"
         commandLine.addParameter("run")
         
-        // 添加构建标志
+        // Add build flags
         if (configuration.goBuildFlags.isNotEmpty()) {
             configuration.goBuildFlags.split(" ").forEach { flag ->
                 if (flag.isNotBlank()) {
@@ -293,84 +293,84 @@ class PprofRunState(
             }
         }
         
-        // 根据运行种类添加参数
+        // Add parameters based on run kind
         val runKind = PprofRunKind.fromString(configuration.runKind)
-        logger.info("运行种类: $runKind")
+        logger.info("Run kind: $runKind")
         when (runKind) {
             PprofRunKind.FILE -> {
                 if (configuration.filePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.filePath)
-                    logger.info("文件路径: ${configuration.filePath}")
+                    logger.info("File path: ${configuration.filePath}")
                 } else {
-                    logger.warn("文件路径为空")
+                    logger.warn("File path is empty")
                 }
             }
             PprofRunKind.DIRECTORY -> {
                 if (configuration.directoryPath.isNotEmpty()) {
                     commandLine.addParameter(configuration.directoryPath)
-                    logger.info("目录路径: ${configuration.directoryPath}")
+                    logger.info("Directory path: ${configuration.directoryPath}")
                 } else {
-                    logger.warn("目录路径为空")
+                    logger.warn("Directory path is empty")
                 }
             }
             PprofRunKind.PACKAGE -> {
                 if (configuration.packagePath.isNotEmpty()) {
                     commandLine.addParameter(configuration.packagePath)
-                    logger.info("包路径: ${configuration.packagePath}")
+                    logger.info("Package path: ${configuration.packagePath}")
                 } else {
-                    logger.warn("包路径为空")
+                    logger.warn("Package path is empty")
                 }
             }
         }
         
-        // 如果启用了 pprof 且是运行时采样模式，注入 pprof 初始化文件（放在用户文件之后）
+        // If pprof is enabled and in runtime sampling mode, inject pprof initialization file (after user files)
         var pprofInitFile: File? = null
         logger.info("Pprof 配置: enablePprof=${configuration.enablePprof}")
         if (configuration.enablePprof) {
-            logger.info("开始注入 pprof 初始化文件...")
+            logger.info("Starting to inject pprof initialization file...")
             pprofInitFile = injectPprofInit()
             if (pprofInitFile != null) {
                 commandLine.addParameter(pprofInitFile.absolutePath)
-                logger.info("已注入 pprof 初始化文件: ${pprofInitFile.absolutePath}")
+                logger.info("Injected pprof initialization file: ${pprofInitFile.absolutePath}")
             } else {
-                logger.warn("注入 pprof 初始化文件失败")
+                logger.warn("Failed to inject pprof initialization file")
             }
         } else {
-            logger.info("跳过 pprof 注入")
+            logger.info("Skipping pprof injection")
         }
         
         if (configuration.workingDirectory.isNotEmpty()) {
             commandLine.setWorkDirectory(configuration.workingDirectory)
         }
         
-        // 添加程序参数
+        // Add program arguments
         if (configuration.programArguments.isNotEmpty()) {
             commandLine.addParameters(configuration.programArguments.split(" "))
         }
         
-        // 添加环境变量
+        // Add environment variables
         addEnvironmentVariables(commandLine)
         
-        // 添加 pprof 相关的环境变量
+        // Add pprof-related environment variables
         if (configuration.enablePprof) {
             val outputDir = getOutputDirectory()
             cleanOldPprofFiles(outputDir)
             addPprofEnvironmentVariables(commandLine)
         }
         
-        // 打印完整的命令行用于调试
-        logger.info("执行命令: ${commandLine.commandLineString}")
-        logger.info("工作目录: ${commandLine.workDirectory}")
+        // Print complete command line for debugging
+        logger.info("Execute command: ${commandLine.commandLineString}")
+        logger.info("Working directory: ${commandLine.workDirectory}")
         logger.info("环境变量: ${commandLine.environment.filter { it.key.startsWith("PPROF_") }}")
         
         val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         
-        // 如果启用了自动打开结果，监控输出和进程终止
+        // If auto-open result is enabled, monitor output and process termination
         logger.info("autoOpenResult=${configuration.autoOpenResult}")
         if (configuration.enablePprof && configuration.autoOpenResult) {
             val outputDir = getOutputDirectory()
-            logger.info("将在数据保存完成或进程结束后进行可视化，输出目录: ${outputDir.absolutePath}")
+            logger.info("Will visualize after data save completion or process termination, output directory: ${outputDir.absolutePath}")
             
             var visualizationTriggered = false
             
@@ -378,39 +378,39 @@ class PprofRunState(
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     val text = event.text
                     
-                    // 检测到 pprof 数据保存完成的日志
+                    // Detected log of pprof data save completion
                     if (!visualizationTriggered && text.contains("[pprofview] 所有 pprof 数据已保存")) {
                         visualizationTriggered = true
-                        logger.info("检测到 pprof 数据保存完成，立即进行可视化")
+                        logger.info("Detected pprof data save completion, visualizing immediately")
                         
-                        // 在后台线程中执行可视化，避免阻塞输出处理
+                        // Execute visualization in background thread to avoid blocking output processing
                         Thread {
-                            Thread.sleep(500) // 短暂延迟确保文件完全写入
+                            Thread.sleep(500) // Short delay to ensure file is fully written
                             autoOpenVisualization(outputDir)
                         }.start()
                     }
                 }
                 
                 override fun processTerminated(event: ProcessEvent) {
-                    logger.info("进程已终止，退出码: ${event.exitCode}")
+                    logger.info("Process terminated, exit code: ${event.exitCode}")
                     
-                    // 清理临时文件
+                    // Clean up temporary files
                     pprofInitFile?.delete()
                     
-                    // 如果还没有触发可视化，在进程结束时触发（备用方案）
+                    // If visualization hasn't been triggered yet, trigger it when process ends (fallback)
                     if (!visualizationTriggered) {
-                        logger.info("进程结束时触发可视化（备用方案）")
+                        logger.info("Triggering visualization on process end (fallback)")
                         Thread.sleep(1000)
                         autoOpenVisualization(outputDir)
                     }
                 }
             })
         } else if (pprofInitFile != null) {
-            // 即使不自动打开，也要清理临时文件
-            logger.info("不自动打开，仅注册清理监听器")
+            // Clean up temporary files even if not auto-opening
+            logger.info("Not auto-opening, only registering cleanup listener")
             processHandler.addProcessListener(object : ProcessListener {
                 override fun processTerminated(event: ProcessEvent) {
-                    logger.info("进程已终止（仅清理），退出码: ${event.exitCode}")
+                    logger.info("Process terminated (cleanup only), exit code: ${event.exitCode}")
                     pprofInitFile?.delete()
                 }
             })
@@ -425,11 +425,11 @@ class PprofRunState(
     private fun injectPprofInit(): File? {
         val logger = thisLogger()
         try {
-            // 从资源中读取 pprof_init.go 模板
+            // Read pprof_init.go template from resources
             val inputStream = javaClass.classLoader.getResourceAsStream("pprof_runtime/pprof_init.go")
                 ?: return null
             
-            // 确定目标目录 - 必须与用户代码在同一目录
+            // Determine target directory - must be in same directory as user code
             val targetDir = when (PprofRunKind.fromString(configuration.runKind)) {
                 PprofRunKind.FILE -> {
                     if (configuration.filePath.isNotEmpty()) {
@@ -444,20 +444,20 @@ class PprofRunState(
                 else -> null
             } ?: File(configuration.workingDirectory).takeIf { it.exists() } ?: return null
             
-            // 在目标目录创建临时文件（不能以 . 开头，否则会被 Go 构建工具忽略）
+            // Create temporary file in target directory (cannot start with ., otherwise ignored by Go build tools)
             val tempFile = File(targetDir, "zzz_pprofview_init_${System.currentTimeMillis()}.go")
             
-            // 写入内容
+            // Write content
             inputStream.use { input ->
                 tempFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
             
-            logger.info("创建 pprof 初始化文件: ${tempFile.absolutePath}")
+            logger.info("Created pprof initialization file: ${tempFile.absolutePath}")
             return tempFile
         } catch (e: Exception) {
-            logger.error("无法注入 pprof 初始化文件", e)
+            logger.error("Cannot inject pprof initialization file", e)
             return null
         }
     }
@@ -468,7 +468,7 @@ class PprofRunState(
     private fun injectPprofHttpInit(): File? {
         val logger = thisLogger()
         try {
-            // 确定目标目录 - 必须与用户代码在同一目录
+            // Determine target directory - must be in same directory as user code
             val targetDir = when (PprofRunKind.fromString(configuration.runKind)) {
                 PprofRunKind.FILE -> {
                     if (configuration.filePath.isNotEmpty()) {
@@ -483,10 +483,10 @@ class PprofRunState(
                 else -> null
             } ?: File(configuration.workingDirectory).takeIf { it.exists() } ?: return null
             
-            // 在目标目录创建临时文件
+            // Create temporary file in target directory
             val tempFile = File(targetDir, "zzz_pprofview_http_${System.currentTimeMillis()}.go")
             
-            // 生成 HTTP 服务代码
+            // Generate HTTP service code
             val httpCode = """
 package main
 
@@ -509,26 +509,26 @@ func init() {
     
     go func() {
         addr := fmt.Sprintf("localhost:%d", port)
-        fmt.Printf("[pprofview-http] pprof HTTP 服务已启动\n")
-        fmt.Printf("[pprofview-http] 访问地址: http://%s/debug/pprof/\n", addr)
+        fmt.Printf("[pprofview-http] pprof HTTP service started\n")
+        fmt.Printf("[pprofview-http] Access address: http://%s/debug/pprof/\n", addr)
         fmt.Printf("[pprofview-http] CPU Profile: http://%s/debug/pprof/profile\n", addr)
         fmt.Printf("[pprofview-http] Heap Profile: http://%s/debug/pprof/heap\n", addr)
         fmt.Printf("[pprofview-http] Goroutine: http://%s/debug/pprof/goroutine\n", addr)
         
         if err := http.ListenAndServe(addr, nil); err != nil {
-            log.Printf("[pprofview-http] HTTP 服务启动失败: %v\n", err)
+            log.Printf("[pprofview-http] HTTP service startup failed: %v\n", err)
         }
     }()
 }
 """.trimIndent()
             
-            // 写入内容
+            // Write content
             tempFile.writeText(httpCode)
             
-            logger.info("创建 pprof HTTP 初始化文件: ${tempFile.absolutePath}")
+            logger.info("Created pprof HTTP initialization file: ${tempFile.absolutePath}")
             return tempFile
         } catch (e: Exception) {
-            logger.error("无法注入 pprof HTTP 初始化文件", e)
+            logger.error("Cannot inject pprof HTTP initialization file", e)
             return null
         }
     }
@@ -555,9 +555,9 @@ func init() {
         val outputDir = getOutputDirectory()
         
         commandLine.environment["PPROF_OUTPUT_DIR"] = outputDir.absolutePath
-        logger.info("设置 PPROF_OUTPUT_DIR=${outputDir.absolutePath}")
+        logger.info("Set PPROF_OUTPUT_DIR=${outputDir.absolutePath}")
         
-        // 设置采样率
+        // Set sampling rates
         if (configuration.memProfileRate > 0) {
             commandLine.environment["PPROF_MEM_RATE"] = configuration.memProfileRate.toString()
         }
@@ -570,15 +570,15 @@ func init() {
             commandLine.environment["PPROF_MUTEX_FRACTION"] = configuration.mutexProfileFraction.toString()
         }
         
-        // 设置 CPU 采样持续时间
+        // Set CPU sampling duration
         commandLine.environment["PPROF_CPU_DURATION"] = configuration.cpuDuration.toString()
         
-        // 设置采样模式和间隔
+        // Set sampling mode and interval
         commandLine.environment["PPROF_SAMPLING_MODE"] = configuration.samplingMode
         commandLine.environment["PPROF_SAMPLING_INTERVAL"] = configuration.samplingInterval.toString()
-        logger.info("采样模式: ${configuration.samplingMode}, 间隔: ${configuration.samplingInterval}秒")
+        logger.info("Sampling mode: ${configuration.samplingMode}, interval: ${configuration.samplingInterval} seconds")
         
-        // 设置启用的分析类型
+        // Set enabled profile types
         logger.info("Profile types: ${configuration.profileTypes}")
         configuration.profileTypes.split(",").forEach { typeStr ->
             val type = PprofProfileType.fromString(typeStr.trim())
@@ -586,11 +586,11 @@ func init() {
                 when (type) {
                     PprofProfileType.CPU -> {
                         commandLine.environment["PPROF_ENABLE_CPU"] = "true"
-                        logger.info("启用 CPU profiling")
+                        logger.info("Enabled CPU profiling")
                     }
                     PprofProfileType.HEAP -> {
                         commandLine.environment["PPROF_ENABLE_HEAP"] = "true"
-                        logger.info("启用 HEAP profiling")
+                        logger.info("Enabled HEAP profiling")
                     }
                     PprofProfileType.GOROUTINE -> {
                         commandLine.environment["PPROF_ENABLE_GOROUTINE"] = "true"
@@ -609,7 +609,7 @@ func init() {
                     }
                     PprofProfileType.TRACE -> {
                         commandLine.environment["PPROF_ENABLE_TRACE"] = "true"
-                        logger.info("启用 TRACE profiling")
+                        logger.info("Enabled TRACE profiling")
                     }
                 }
             }
@@ -645,17 +645,17 @@ func init() {
             }
             
             if (!profileFiles.isNullOrEmpty()) {
-                logger.info("清除 ${profileFiles.size} 个旧的性能分析文件")
+                logger.info("Cleaning ${profileFiles.size} old profile files")
                 profileFiles.forEach { file ->
                     if (file.delete()) {
-                        logger.info("已删除: ${file.name}")
+                        logger.info("Deleted: ${file.name}")
                     } else {
-                        logger.warn("无法删除: ${file.name}")
+                        logger.warn("Cannot delete: ${file.name}")
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.error("清除旧性能分析文件失败", e)
+            logger.error("Failed to clean old profile files", e)
         }
     }
     
@@ -667,39 +667,39 @@ func init() {
         ApplicationManager.getApplication().invokeLater {
             val project = environment.project
             
-            // 查找生成的 pprof 和 trace 文件
+            // Find generated pprof and trace files
             val profileFiles = outputDir.listFiles { file ->
                 file.isFile && (file.name.endsWith(".pprof") || file.name.endsWith(".out"))
             }
             
             if (profileFiles.isNullOrEmpty()) {
-                logger.warn("未找到生成的性能分析文件: ${outputDir.absolutePath}")
+                logger.warn("No generated profile files found: ${outputDir.absolutePath}")
                 return@invokeLater
             }
             
-            logger.info("找到 ${profileFiles.size} 个性能分析文件")
+            logger.info("Found ${profileFiles.size} profile files")
             
-            // 获取用户选中的分析类型
+            // Get user-selected profile types
             val selectedTypes = configuration.profileTypes.split(",")
                 .map { it.trim() }
                 .mapNotNull { PprofProfileType.fromString(it) }
                 .toSet()
             
-            logger.info("用户选中的分析类型: ${selectedTypes.map { it.name }}")
+            logger.info("User-selected profile types: ${selectedTypes.map { it.name }}")
             
-            // 刷新文件系统
+            // Refresh file system
             LocalFileSystem.getInstance().refreshAndFindFileByIoFile(outputDir)
             
-            // 只为用户选中的分析类型生成报告
+            // Only generate reports for user-selected profile types
             profileFiles.sortedBy { it.name }.forEach { file ->
-                // 根据文件名判断分析类型
+                // Determine profile type based on filename
                 val profileType = matchProfileType(file.name)
                 
                 if (profileType != null && profileType in selectedTypes) {
                     val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
                     if (virtualFile != null) {
-                        logger.info("生成 ${file.name} 的文本报告（类型: ${profileType.displayName}）")
-                        // 使用 TEXT 类型在 Pprof Plus: Visual Analytics 窗口显示
+                        logger.info("Generating text report for ${file.name} (type: ${profileType.displayName})")
+                        // Use TEXT type to display in Pprof Plus: Visual Analytics window
                         val visualizationService = project.service<PprofVisualizationService>()
                         visualizationService.visualize(virtualFile, VisualizationType.TEXT)
                     }
@@ -730,12 +730,12 @@ func init() {
                 val outputPanel = com.github.spelens.pprofview.toolWindow.PprofOutputPanel.getInstance(project)
                 if (outputPanel != null) {
                     outputPanel.clearAll()
-                    logger.info("已清除 pprof Output 窗口的旧数据")
+                    logger.info("Cleared old data from pprof Output window")
                 } else {
-                    logger.warn("无法获取 pprof Output 窗口实例")
+                    logger.warn("Cannot get pprof Output window instance")
                 }
             } catch (e: Exception) {
-                logger.error("清除 pprof Output 窗口失败", e)
+                logger.error("Failed to clear pprof Output window", e)
             }
         }
     }

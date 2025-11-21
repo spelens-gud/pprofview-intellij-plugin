@@ -11,7 +11,7 @@ A powerful performance analysis plugin for Go developers. Pprof Plus seamlessly 
 - 🚀 One-click profiling for CPU, Memory, Goroutine, Block, and Mutex analysis
 <!-- Plugin description end -->
 
-English | [简体中文](README.md)
+English | [简体中文](README_ZH.md)
 
 ## ✨ Key Features
 
@@ -173,7 +173,7 @@ func main() {
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please check the [Contributing Guide](CONTRIBUTING.md).
+Contributions are welcome! Please check the [Contributing Guide](CONTRIBUTING_EN.md).
 
 ## 📄 License
 
@@ -183,7 +183,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [GitHub Repository](https://github.com/spelens-gud/pprofview-intellij-plugin)
 - [Issue Tracker](https://github.com/spelens-gud/pprofview-intellij-plugin/issues)
-- [Changelog](CHANGELOG.md)
+- [Changelog](CHANGELOG_EN.md)
 - [Go pprof Documentation](https://pkg.go.dev/runtime/pprof)
 
 ## 📧 Contact

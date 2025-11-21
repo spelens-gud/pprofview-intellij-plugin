@@ -1,180 +1,182 @@
-# 发布前检查清单
+# Release Checklist
 
-在发布插件到 JetBrains Marketplace 之前，请确保完成以下所有检查项。
+English | [简体中文](RELEASE_CHECKLIST_ZH.md)
 
-## 📋 必需项
+Before releasing the plugin to JetBrains Marketplace, ensure all items below are completed.
 
-### 代码和构建
+## 📋 Required Items
 
-- [ ] 所有测试通过：`./gradlew test`
-- [ ] 插件验证通过：`./gradlew verifyPlugin`
-- [ ] 代码检查无严重问题：`./gradlew verifyPlugin`
-- [ ] 构建成功：`./gradlew buildPlugin`
-- [ ] 在本地 IDE 中测试插件：`./gradlew runIde`
+### Code and Build
 
-### 文档
+- [ ] All tests pass: `./gradlew test`
+- [ ] Plugin verification passes: `./gradlew verifyPlugin`
+- [ ] Code inspection has no critical issues: `./gradlew verifyPlugin`
+- [ ] Build succeeds: `./gradlew buildPlugin`
+- [ ] Plugin tested in local IDE: `./gradlew runIde`
 
-- [ ] README.md 内容完整且准确
-- [ ] README_ZH.md 与英文版本同步
-- [ ] CHANGELOG.md 已更新当前版本的变更内容
-- [ ] LICENSE 文件存在
-- [ ] CONTRIBUTING.md 存在
+### Documentation
 
-### 配置文件
+- [ ] README.md content is complete and accurate
+- [ ] README_ZH.md is synchronized with English version
+- [ ] CHANGELOG.md updated with current version changes
+- [ ] LICENSE file exists
+- [ ] CONTRIBUTING.md exists
 
-- [ ] `gradle.properties` 中的版本号已更新
-- [ ] `plugin.xml` 中的插件描述准确
-- [ ] `plugin.xml` 中的 `since-build` 版本正确
-- [ ] 插件名称、供应商信息正确
+### Configuration Files
 
-### GitHub 配置
+- [ ] Version number updated in `gradle.properties`
+- [ ] Plugin description in `plugin.xml` is accurate
+- [ ] `since-build` version in `plugin.xml` is correct
+- [ ] Plugin name and vendor information are correct
 
-- [ ] GitHub Secrets 已配置：
-  - [ ] `PUBLISH_TOKEN` - JetBrains Marketplace 令牌
-  - [ ] `CERTIFICATE_CHAIN` - 插件签名证书链
-  - [ ] `PRIVATE_KEY` - 插件签名私钥
-  - [ ] `PRIVATE_KEY_PASSWORD` - 私钥密码
-- [ ] GitHub Actions 工作流正常运行
-- [ ] 所有 CI 检查通过
+### GitHub Configuration
 
-### 插件内容
+- [ ] GitHub Secrets configured:
+  - [ ] `PUBLISH_TOKEN` - JetBrains Marketplace token
+  - [ ] `CERTIFICATE_CHAIN` - Plugin signing certificate chain
+  - [ ] `PRIVATE_KEY` - Plugin signing private key
+  - [ ] `PRIVATE_KEY_PASSWORD` - Private key password
+- [ ] GitHub Actions workflows running normally
+- [ ] All CI checks pass
 
-- [ ] 插件图标存在且美观（`pluginIcon.svg`）
-- [ ] 所有功能正常工作
-- [ ] 没有已知的严重 bug
-- [ ] 性能表现良好
+### Plugin Content
 
-## 🔍 可选项
+- [ ] Plugin icon exists and looks good (`pluginIcon.svg`)
+- [ ] All features work correctly
+- [ ] No known critical bugs
+- [ ] Performance is acceptable
 
-### 质量保证
+## 🔍 Optional Items
 
-- [ ] 代码覆盖率达到合理水平
-- [ ] Qodana 代码检查通过
-- [ ] 在多个 IDE 版本中测试
-- [ ] 在不同操作系统中测试（Windows、macOS、Linux）
+### Quality Assurance
 
-### 文档和示例
+- [ ] Code coverage reaches reasonable level
+- [ ] Qodana code inspection passes
+- [ ] Tested in multiple IDE versions
+- [ ] Tested on different operating systems (Windows, macOS, Linux)
 
-- [ ] 提供了使用示例
-- [ ] 截图和 GIF 演示（如果适用）
-- [ ] API 文档完整（如果提供 API）
+### Documentation and Examples
 
-### 社区
+- [ ] Usage examples provided
+- [ ] Screenshots and GIF demos (if applicable)
+- [ ] API documentation complete (if providing API)
 
-- [ ] 准备好发布公告
-- [ ] 社交媒体宣传内容（如果适用）
+### Community
 
-## 📝 发布步骤
+- [ ] Release announcement prepared
+- [ ] Social media promotion content (if applicable)
 
-### 1. 准备发布
+## 📝 Release Steps
+
+### 1. Prepare Release
 
 ```bash
-# 1. 确保在 main 分支
+# 1. Ensure on main branch
 git checkout main
 git pull origin main
 
-# 2. 更新版本号（在 gradle.properties 中）
+# 2. Update version number (in gradle.properties)
 # pluginVersion = x.y.z
 
-# 3. 更新 CHANGELOG.md
-# 将 [Unreleased] 部分移到新版本下
+# 3. Update CHANGELOG.md
+# Move [Unreleased] section to new version
 
-# 4. 提交变更
+# 4. Commit changes
 git add .
 git commit -m "chore: prepare release x.y.z"
 git push origin main
 ```
 
-### 2. 创建 Tag
+### 2. Create Tag
 
 ```bash
-# 创建并推送 tag
+# Create and push tag
 git tag -a vx.y.z -m "Release version x.y.z"
 git push origin vx.y.z
 ```
 
-### 3. 等待 CI 构建
+### 3. Wait for CI Build
 
-- GitHub Actions 会自动构建并创建 Draft Release
-- 检查构建日志确保没有错误
-- 下载并测试构建的插件
+- GitHub Actions will automatically build and create Draft Release
+- Check build logs for errors
+- Download and test the built plugin
 
-### 4. 发布到 Marketplace
+### 4. Publish to Marketplace
 
-- 在 GitHub Releases 页面找到 Draft Release
-- 检查 Release Notes 是否正确
-- 点击 "Publish release"
-- GitHub Actions 会自动发布到 JetBrains Marketplace
+- Find Draft Release on GitHub Releases page
+- Verify Release Notes are correct
+- Click "Publish release"
+- GitHub Actions will automatically publish to JetBrains Marketplace
 
-### 5. 验证发布
+### 5. Verify Release
 
-- 等待 JetBrains Marketplace 审核（通常几小时到几天）
-- 在 Marketplace 页面确认插件已发布
-- 测试从 Marketplace 安装插件
+- Wait for JetBrains Marketplace review (usually hours to days)
+- Confirm plugin is published on Marketplace page
+- Test installing plugin from Marketplace
 
-## 🔐 首次发布额外步骤
+## 🔐 First Release Additional Steps
 
-如果这是首次发布，还需要：
+If this is the first release, you also need to:
 
-### 获取 JetBrains Marketplace Token
+### Get JetBrains Marketplace Token
 
-1. 访问 [JetBrains Marketplace](https://plugins.jetbrains.com/)
-2. 登录你的 JetBrains 账号
-3. 进入个人资料 → API Tokens
-4. 创建新的 token
-5. 将 token 添加到 GitHub Secrets (`PUBLISH_TOKEN`)
+1. Visit [JetBrains Marketplace](https://plugins.jetbrains.com/)
+2. Login with your JetBrains account
+3. Go to Profile → API Tokens
+4. Create new token
+5. Add token to GitHub Secrets (`PUBLISH_TOKEN`)
 
-### 生成插件签名证书（可选但推荐）
+### Generate Plugin Signing Certificate (Optional but Recommended)
 
 ```bash
-# 生成私钥
+# Generate private key
 openssl genrsa -out private.pem 4096
 
-# 生成证书请求
+# Generate certificate request
 openssl req -new -key private.pem -out cert.csr
 
-# 生成自签名证书
+# Generate self-signed certificate
 openssl x509 -req -days 3650 -in cert.csr -signkey private.pem -out cert.pem
 
-# 将证书和私钥添加到 GitHub Secrets
-# CERTIFICATE_CHAIN: cert.pem 的内容
-# PRIVATE_KEY: private.pem 的内容
-# PRIVATE_KEY_PASSWORD: 私钥密码（如果设置了）
+# Add certificate and private key to GitHub Secrets
+# CERTIFICATE_CHAIN: content of cert.pem
+# PRIVATE_KEY: content of private.pem
+# PRIVATE_KEY_PASSWORD: private key password (if set)
 ```
 
-### 配置 GitHub Secrets
+### Configure GitHub Secrets
 
-在 GitHub 仓库设置中：
-1. 进入 Settings → Secrets and variables → Actions
-2. 添加以下 secrets：
+In GitHub repository settings:
+1. Go to Settings → Secrets and variables → Actions
+2. Add the following secrets:
    - `PUBLISH_TOKEN`
    - `CERTIFICATE_CHAIN`
    - `PRIVATE_KEY`
    - `PRIVATE_KEY_PASSWORD`
 
-## ⚠️ 注意事项
+## ⚠️ Important Notes
 
-1. **版本号规范**：遵循语义化版本 (SemVer)
-   - 主版本号：不兼容的 API 变更
-   - 次版本号：向后兼容的功能新增
-   - 修订号：向后兼容的问题修正
+1. **Version Numbering**: Follow Semantic Versioning (SemVer)
+   - Major version: Incompatible API changes
+   - Minor version: Backward-compatible new features
+   - Patch version: Backward-compatible bug fixes
 
-2. **CHANGELOG 格式**：保持一致的格式
-   - 使用 `### Added`、`### Changed`、`### Fixed` 等标题
-   - 每个变更一行，简洁明了
+2. **CHANGELOG Format**: Maintain consistent format
+   - Use `### Added`, `### Changed`, `### Fixed` headings
+   - One change per line, concise and clear
 
-3. **测试充分**：在发布前充分测试
-   - 在不同 IDE 版本中测试
-   - 测试所有主要功能
-   - 检查性能和内存使用
+3. **Test Thoroughly**: Test adequately before release
+   - Test in different IDE versions
+   - Test all major features
+   - Check performance and memory usage
 
-4. **回滚计划**：如果发现严重问题
-   - 可以在 Marketplace 中隐藏版本
-   - 快速发布修复版本
+4. **Rollback Plan**: If critical issues are found
+   - Can hide version in Marketplace
+   - Quickly release fix version
 
-## 📞 获取帮助
+## 📞 Getting Help
 
-如果遇到问题：
-- 查看 [IntelliJ Platform Plugin 发布文档](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html)
-- 查看 [GitHub Actions 日志](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
-- 在项目 Issues 中寻求帮助
+If you encounter issues:
+- Check [IntelliJ Platform Plugin Publishing Documentation](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html)
+- Check [GitHub Actions Logs](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
+- Seek help in project Issues

@@ -1,34 +1,40 @@
 package com.github.spelens.pprofview.runconfig
 
 /**
- * pprof 运行种类
+ * pprof run kind
  * 
- * 参考 Go 插件的运行配置类型
+ * Reference Go plugin's run configuration types
  */
-enum class PprofRunKind(val displayName: String, val description: String) {
+enum class PprofRunKind(val messageKey: String, val descriptionKey: String) {
     /**
-     * 目录 - 运行指定目录下的 main 包
+     * Directory - run main package in specified directory
      */
     DIRECTORY(
-        "目录",
-        "运行指定目录下的 main 包"
+        "pprof.runKind.directory",
+        "pprof.runKind.directory.description"
     ),
     
     /**
-     * 文件 - 运行指定的 Go 文件
+     * File - run specified Go file
      */
     FILE(
-        "文件",
-        "运行指定的 Go 文件"
+        "pprof.runKind.file",
+        "pprof.runKind.file.description"
     ),
     
     /**
-     * 软件包 - 运行指定的 Go 包
+     * Package - run specified Go package
      */
     PACKAGE(
-        "软件包",
-        "运行指定的 Go 包（如 github.com/user/project）"
+        "pprof.runKind.package",
+        "pprof.runKind.package.description"
     );
+    
+    val displayName: String
+        get() = com.github.spelens.pprofview.PprofViewBundle.message(messageKey)
+    
+    val description: String
+        get() = com.github.spelens.pprofview.PprofViewBundle.message(descriptionKey)
     
     companion object {
         fun fromString(value: String?): PprofRunKind {

@@ -3,14 +3,14 @@ package com.github.spelens.pprofview.parser
 import com.intellij.openapi.diagnostic.thisLogger
 
 /**
- * pprof 文本报告解析器
- * 解析 go tool pprof -text 输出的文本格式数据
+ * pprof text report parser
+ * Parses text format data output by go tool pprof -text
  */
 class PprofTextParser {
     private val logger = thisLogger()
     
     /**
-     * 解析文本报告
+     * Parse text report
      */
     fun parse(text: String): PprofTextReport {
         val lines = text.lines().filter { it.isNotBlank() }
@@ -19,9 +19,9 @@ class PprofTextParser {
         var totalSamples = 0L
         var unit = "samples"
         
-        // 解析每一行
+        // Parse each line
         for (line in lines) {
-            // 跳过标题行和分隔符
+            // Skip header lines and separators
             if (line.startsWith("Showing") || 
                 line.startsWith("File:") ||
                 line.startsWith("Type:") ||
@@ -30,7 +30,7 @@ class PprofTextParser {
                 line.contains("---") ||
                 line.trim().isEmpty()) {
                 
-                // 尝试从 Type 行提取单位
+                // Try to extract unit from Type line
                 if (line.startsWith("Type:")) {
                     val parts = line.split(":")
                     if (parts.size > 1) {
@@ -40,7 +40,7 @@ class PprofTextParser {
                 continue
             }
             
-            // 解析数据行
+            // Parse data line
             val entry = parseEntry(line)
             if (entry != null) {
                 entries.add(entry)
@@ -48,7 +48,7 @@ class PprofTextParser {
             }
         }
         
-        logger.info("解析完成: ${entries.size} 条记录, 总计 $totalSamples $unit")
+        logger.info("Parsing completed: ${entries.size} entries, total $totalSamples $unit")
         
         return PprofTextReport(
             entries = entries,
@@ -58,13 +58,13 @@ class PprofTextParser {
     }
     
     /**
-     * 解析单行数据
-     * 格式示例: "      flat  flat%   sum%        cum   cum%"
-     *          "    10.50s 52.50% 52.50%     10.50s 52.50%  main.fibonacci"
+     * Parse single line data
+     * Format example: "      flat  flat%   sum%        cum   cum%"
+     *                 "    10.50s 52.50% 52.50%     10.50s 52.50%  main.fibonacci"
      */
     private fun parseEntry(line: String): PprofEntry? {
         try {
-            // 使用正则表达式解析
+            // Parse using regex
             val pattern = """^\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$""".toRegex()
             val match = pattern.find(line) ?: return null
             
@@ -79,23 +79,23 @@ class PprofTextParser {
                 functionName = functionName.trim()
             )
         } catch (e: Exception) {
-            logger.warn("解析行失败: $line", e)
+            logger.warn("Failed to parse line: $line", e)
             return null
         }
     }
     
     /**
-     * 解析数值 (支持带单位的值，如 10.50s, 1024MB)
+     * Parse numeric value (supports values with units, e.g. 10.50s, 1024MB)
      */
     private fun parseValue(str: String): Long {
         try {
-            // 移除单位后缀
+            // Remove unit suffix
             val numStr = str.replace(Regex("[a-zA-Z%]+"), "")
             val value = numStr.toDoubleOrNull() ?: 0.0
             
-            // 根据单位转换
+            // Convert based on unit
             return when {
-                str.endsWith("s") -> (value * 1000).toLong() // 秒转毫秒
+                str.endsWith("s") -> (value * 1000).toLong() // seconds to milliseconds
                 str.endsWith("ms") -> value.toLong()
                 str.endsWith("MB") -> (value * 1024 * 1024).toLong()
                 str.endsWith("KB") -> (value * 1024).toLong()
@@ -108,7 +108,7 @@ class PprofTextParser {
     }
     
     /**
-     * 解析百分比
+     * Parse percentage
      */
     private fun parsePercent(str: String): Double {
         return str.replace("%", "").toDoubleOrNull() ?: 0.0
@@ -116,7 +116,7 @@ class PprofTextParser {
 }
 
 /**
- * pprof 文本报告数据模型
+ * pprof text report data model
  */
 data class PprofTextReport(
     val entries: List<PprofEntry>,
@@ -125,13 +125,13 @@ data class PprofTextReport(
 )
 
 /**
- * pprof 条目
+ * pprof entry
  */
 data class PprofEntry(
-    val flat: Long,           // 函数自身耗时
-    val flatPercent: Double,  // 函数自身耗时百分比
-    val sumPercent: Double,   // 累计百分比
-    val cum: Long,            // 函数及其调用的总耗时
-    val cumPercent: Double,   // 函数及其调用的总耗时百分比
-    val functionName: String  // 函数名
+    val flat: Long,           // Function's own time
+    val flatPercent: Double,  // Function's own time percentage
+    val sumPercent: Double,   // Cumulative percentage
+    val cum: Long,            // Total time of function and its calls
+    val cumPercent: Double,   // Total time percentage of function and its calls
+    val functionName: String  // Function name
 )

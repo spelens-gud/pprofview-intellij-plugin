@@ -1,43 +1,45 @@
-# 快速发布指南
+# Quick Release Guide
 
-本文档提供快速发布新版本的步骤说明。
+English | [简体中文](RELEASE_ZH.md)
 
-## 前置条件
+This document provides step-by-step instructions for releasing a new version.
 
-✅ 确保已完成 [GitHub Secrets 配置](.github/SECRETS_SETUP.md)  
-✅ 确保所有测试通过  
-✅ 确保代码已合并到 main 分支
+## Prerequisites
 
-## 发布步骤
+✅ Complete [GitHub Secrets Setup](.github/SECRETS_SETUP.md)  
+✅ All tests pass  
+✅ Code merged to main branch
 
-### 1. 更新版本号
+## Release Steps
 
-编辑 `gradle.properties`：
+### 1. Update Version Number
+
+Edit `gradle.properties`:
 
 ```properties
-pluginVersion = 1.0.1  # 更新为新版本号
+pluginVersion = 1.0.1  # Update to new version
 ```
 
-### 2. 更新 CHANGELOG
+### 2. Update CHANGELOG
 
-编辑 `CHANGELOG.md`，将 `[Unreleased]` 部分移到新版本下：
+Edit `CHANGELOG.md`, move `[Unreleased]` section to new version:
 
 ```markdown
 ## [1.0.1] - 2025-11-22
 
 ### Added
-- 新功能描述
+- New feature description
 
 ### Fixed
-- Bug 修复描述
+- Bug fix description
 
 ### Changed
-- 变更描述
+- Change description
 
 ## [Unreleased]
 ```
 
-### 3. 提交变更
+### 3. Commit Changes
 
 ```bash
 git add gradle.properties CHANGELOG.md
@@ -45,125 +47,125 @@ git commit -m "chore: prepare release 1.0.1"
 git push origin main
 ```
 
-### 4. 创建并推送 Tag
+### 4. Create and Push Tag
 
 ```bash
 git tag -a v1.0.1 -m "Release version 1.0.1"
 git push origin v1.0.1
 ```
 
-### 5. 等待自动构建
+### 5. Wait for Automated Build
 
-1. 访问 [GitHub Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
-2. 等待 Build 工作流完成
-3. 检查是否创建了 Draft Release
+1. Visit [GitHub Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions)
+2. Wait for Build workflow to complete
+3. Check if Draft Release is created
 
-### 6. 发布 Release
+### 6. Publish Release
 
-1. 访问 [Releases 页面](https://github.com/spelens-gud/pprofview-intellij-plugin/releases)
-2. 找到自动创建的 Draft Release
-3. 检查 Release Notes 是否正确
-4. 点击 **Publish release**
+1. Visit [Releases page](https://github.com/spelens-gud/pprofview-intellij-plugin/releases)
+2. Find the auto-created Draft Release
+3. Review Release Notes
+4. Click **Publish release**
 
-### 7. 等待发布到 Marketplace
+### 7. Wait for Marketplace Publication
 
-1. GitHub Actions 会自动将插件发布到 JetBrains Marketplace
-2. 访问 [Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions) 查看发布进度
-3. 等待 JetBrains 审核（通常几小时到几天）
+1. GitHub Actions will automatically publish to JetBrains Marketplace
+2. Visit [Actions](https://github.com/spelens-gud/pprofview-intellij-plugin/actions) to monitor progress
+3. Wait for JetBrains review (usually hours to days)
 
-### 8. 验证发布
+### 8. Verify Release
 
-1. 访问 [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/XXXXX-pprof-plus)
-2. 确认新版本已发布
-3. 在 IDE 中测试安装新版本
+1. Visit [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/XXXXX-pprof-plus)
+2. Confirm new version is published
+3. Test installation in IDE
 
-## 版本号规范
+## Version Numbering
 
-遵循 [语义化版本](https://semver.org/lang/zh-CN/)：
+Follow [Semantic Versioning](https://semver.org/):
 
-- **主版本号**（Major）：不兼容的 API 变更
-  - 例如：1.0.0 → 2.0.0
+- **Major version**: Incompatible API changes
+  - Example: 1.0.0 → 2.0.0
   
-- **次版本号**（Minor）：向后兼容的功能新增
-  - 例如：1.0.0 → 1.1.0
+- **Minor version**: Backward-compatible new features
+  - Example: 1.0.0 → 1.1.0
   
-- **修订号**（Patch）：向后兼容的问题修正
-  - 例如：1.0.0 → 1.0.1
+- **Patch version**: Backward-compatible bug fixes
+  - Example: 1.0.0 → 1.0.1
 
-## 预发布版本
+## Pre-release Versions
 
-如果需要发布预发布版本（alpha、beta、rc）：
+To release pre-release versions (alpha, beta, rc):
 
 ```bash
-# 更新版本号
+# Update version
 pluginVersion = 1.1.0-beta.1
 
-# 创建 tag
+# Create tag
 git tag -a v1.1.0-beta.1 -m "Release version 1.1.0-beta.1"
 git push origin v1.1.0-beta.1
 ```
 
-预发布版本会自动发布到对应的 Release Channel。
+Pre-release versions are automatically published to corresponding Release Channels.
 
-## 回滚发布
+## Rolling Back a Release
 
-如果发现严重问题需要回滚：
+If you discover critical issues:
 
-### 方案 1：隐藏版本
+### Option 1: Hide Version
 
-1. 登录 [JetBrains Marketplace](https://plugins.jetbrains.com/)
-2. 进入插件管理页面
-3. 找到问题版本，点击 **Hide**
+1. Login to [JetBrains Marketplace](https://plugins.jetbrains.com/)
+2. Go to plugin management page
+3. Find the problematic version, click **Hide**
 
-### 方案 2：快速发布修复版本
+### Option 2: Quick Fix Release
 
 ```bash
-# 修复问题
-git commit -am "fix: 修复严重问题"
+# Fix the issue
+git commit -am "fix: critical issue"
 
-# 发布修复版本
+# Release fix version
 pluginVersion = 1.0.2
 git tag -a v1.0.2 -m "Release version 1.0.2"
 git push origin v1.0.2
 ```
 
-## 常见问题
+## Common Issues
 
-### Q: 发布失败，提示认证错误
+### Q: Release failed with authentication error
 
-**A**: 检查 GitHub Secrets 中的 `PUBLISH_TOKEN` 是否正确配置。参考 [Secrets 配置指南](.github/SECRETS_SETUP.md)。
+**A**: Check if `PUBLISH_TOKEN` in GitHub Secrets is correctly configured. See [Secrets Setup Guide](.github/SECRETS_SETUP.md).
 
-### Q: 插件签名失败
+### Q: Plugin signing failed
 
-**A**: 检查 `CERTIFICATE_CHAIN`、`PRIVATE_KEY` 和 `PRIVATE_KEY_PASSWORD` 是否正确配置。
+**A**: Check if `CERTIFICATE_CHAIN`, `PRIVATE_KEY`, and `PRIVATE_KEY_PASSWORD` are correctly configured.
 
-### Q: 如何撤销已发布的版本
+### Q: How to revoke a published version
 
-**A**: 无法完全撤销，但可以在 Marketplace 中隐藏版本，并快速发布修复版本。
+**A**: Cannot fully revoke, but you can hide the version in Marketplace and quickly release a fix version.
 
-### Q: 发布后多久能在 Marketplace 看到
+### Q: How long until visible in Marketplace
 
-**A**: 通常几小时到几天，取决于 JetBrains 的审核速度。首次发布可能需要更长时间。
+**A**: Usually hours to days, depending on JetBrains review speed. First releases may take longer.
 
-### Q: 如何发布到特定的 Release Channel
+### Q: How to publish to specific Release Channel
 
-**A**: 在版本号中使用预发布标识：
+**A**: Use pre-release identifiers in version number:
 - `1.0.0-alpha.1` → alpha channel
 - `1.0.0-beta.1` → beta channel
 - `1.0.0-rc.1` → rc channel
 - `1.0.0` → default channel
 
-## 发布检查清单
+## Release Checklist
 
-使用 [发布检查清单](.github/RELEASE_CHECKLIST.md) 确保不遗漏任何步骤。
+Use the [Release Checklist](.github/RELEASE_CHECKLIST.md) to ensure no steps are missed.
 
-## 自动化脚本
+## Automation Script
 
-可以创建一个脚本来自动化发布流程：
+You can create a script to automate the release process:
 
 ```bash
 #!/bin/bash
-# release.sh - 自动化发布脚本
+# release.sh - Automated release script
 
 VERSION=$1
 
@@ -173,37 +175,37 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-echo "准备发布版本 $VERSION"
+echo "Preparing release version $VERSION"
 
-# 1. 更新版本号
+# 1. Update version
 sed -i '' "s/pluginVersion = .*/pluginVersion = $VERSION/" gradle.properties
 
-# 2. 提交变更
+# 2. Commit changes
 git add gradle.properties CHANGELOG.md
 git commit -m "chore: prepare release $VERSION"
 
-# 3. 创建 tag
+# 3. Create tag
 git tag -a "v$VERSION" -m "Release version $VERSION"
 
-# 4. 推送
+# 4. Push
 git push origin main
 git push origin "v$VERSION"
 
-echo "✅ 发布流程已启动"
-echo "📝 请访问 GitHub Actions 查看构建进度"
+echo "✅ Release process initiated"
+echo "📝 Visit GitHub Actions to monitor build progress"
 echo "🔗 https://github.com/spelens-gud/pprofview-intellij-plugin/actions"
 ```
 
-使用方法：
+Usage:
 
 ```bash
 chmod +x release.sh
 ./release.sh 1.0.1
 ```
 
-## 相关文档
+## Related Documentation
 
-- [发布检查清单](.github/RELEASE_CHECKLIST.md)
-- [Secrets 配置指南](.github/SECRETS_SETUP.md)
-- [贡献指南](CONTRIBUTING.md)
-- [更新日志](CHANGELOG.md)
+- [Release Checklist](.github/RELEASE_CHECKLIST.md)
+- [Secrets Setup Guide](.github/SECRETS_SETUP.md)
+- [Contributing Guide](CONTRIBUTING_EN.md)
+- [Changelog](CHANGELOG_EN.md)

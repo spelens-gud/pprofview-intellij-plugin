@@ -10,7 +10,7 @@ import com.intellij.openapi.util.WriteExternalException
 import org.jdom.Element
 
 /**
- * Pprof 运行配置
+ * Pprof run configuration
  */
 class PprofConfiguration(
     project: Project,
@@ -18,7 +18,7 @@ class PprofConfiguration(
     name: String
 ) : RunConfigurationBase<PprofRunState>(project, factory, name) {
     
-    // 运行配置选项
+    // Run configuration options
     var runKind: String = PprofRunKind.FILE.name
     var filePath: String = ""
     var directoryPath: String = ""
@@ -28,7 +28,7 @@ class PprofConfiguration(
     var environmentVariables: String = ""
     var goBuildFlags: String = ""
     
-    // Pprof 选项
+    // Pprof options
     var enablePprof: Boolean = true
     var collectionMode: String = PprofCollectionMode.RUNTIME_SAMPLING.name
     var profileTypes: String = PprofProfileType.CPU.name
@@ -41,7 +41,7 @@ class PprofConfiguration(
     var memProfileRate: Int = 524288
     var mutexProfileFraction: Int = 1
     var blockProfileRate: Int = 1
-    var testPattern: String = ""  // 测试模式选项，支持正则表达式
+    var testPattern: String = ""  // Test mode option, supports regex
     
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
         return PprofConfigurationEditor()
@@ -55,7 +55,7 @@ class PprofConfiguration(
     override fun readExternal(element: Element) {
         super.readExternal(element)
         element.getChild("pprof-config")?.let { pprofElement ->
-            // 运行配置
+            // Run configuration
             runKind = pprofElement.getAttributeValue("runKind") ?: runKind
             filePath = pprofElement.getAttributeValue("filePath") ?: pprofElement.getAttributeValue("goFilePath") ?: filePath
             directoryPath = pprofElement.getAttributeValue("directoryPath") ?: directoryPath
@@ -65,7 +65,7 @@ class PprofConfiguration(
             environmentVariables = pprofElement.getAttributeValue("environmentVariables") ?: environmentVariables
             goBuildFlags = pprofElement.getAttributeValue("goBuildFlags") ?: goBuildFlags
             
-            // Pprof 配置
+            // Pprof configuration
             enablePprof = pprofElement.getAttributeValue("enablePprof")?.toBoolean() ?: enablePprof
             collectionMode = pprofElement.getAttributeValue("collectionMode") ?: collectionMode
             profileTypes = pprofElement.getAttributeValue("profileTypes") ?: profileTypes
@@ -87,7 +87,7 @@ class PprofConfiguration(
         super.writeExternal(element)
         val pprofElement = Element("pprof-config")
         
-        // 运行配置
+        // Run configuration
         pprofElement.setAttribute("runKind", runKind)
         pprofElement.setAttribute("filePath", filePath)
         pprofElement.setAttribute("directoryPath", directoryPath)
@@ -97,7 +97,7 @@ class PprofConfiguration(
         pprofElement.setAttribute("environmentVariables", environmentVariables)
         pprofElement.setAttribute("goBuildFlags", goBuildFlags)
         
-        // Pprof 配置
+        // Pprof configuration
         pprofElement.setAttribute("enablePprof", enablePprof.toString())
         pprofElement.setAttribute("collectionMode", collectionMode)
         pprofElement.setAttribute("profileTypes", profileTypes)
