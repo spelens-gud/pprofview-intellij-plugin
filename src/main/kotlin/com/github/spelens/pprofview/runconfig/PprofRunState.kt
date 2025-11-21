@@ -427,14 +427,14 @@ class PprofRunState(
     private fun injectPprofInit(): File? {
         val logger = thisLogger()
         try {
-            // 根据当前语言环境选择对应的模板文件
-            val locale = java.util.Locale.getDefault()
+            // 根据 IDE 语言设置选择对应的模板文件
+            val locale = com.intellij.DynamicBundle.getLocale()
             val templateFileName = when {
                 locale.language == "zh" -> "pprof_runtime/pprof_init_zh_CN.go"
                 else -> "pprof_runtime/pprof_init_en.go"
             }
             
-            logger.info("Using pprof template: $templateFileName (locale: ${locale.language})")
+            logger.info("Using pprof template: $templateFileName (IDE locale: ${locale.language})")
             
             // Read pprof_init.go template from resources
             val inputStream = javaClass.classLoader.getResourceAsStream(templateFileName)
